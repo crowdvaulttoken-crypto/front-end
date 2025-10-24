@@ -33,7 +33,55 @@ abstract contract ReentrancyGuard {
     }
 }
 
-contract WNTRADES is ReentrancyGuard {
+abstract contract Context {
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
+
+    function _msgData() internal view virtual returns (bytes calldata) {
+        return msg.data;
+    }
+
+    function _contextSuffixLength() internal view virtual returns (uint256) {
+        return 0;
+    }
+}
+
+abstract contract Ownable is Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor() {
+        _transferOwnership(_msgSender());
+    }
+
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    modifier onlyOwner() {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
+    }
+    
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }    
+
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+
+contract CROWDVAULT is Ownable, ReentrancyGuard {
 
     // ==================== CONSTANTS ====================
     uint256 private constant BASIS_POINTS = 10000;
@@ -42,9 +90,8 @@ contract WNTRADES is ReentrancyGuard {
 
     // ==================== STATE VARIABLES ====================
     IERC20 private usdtToken;
-    address private devOps;
-    address private assetManager;
-    address private arbitrageWallet;
+    address private projectWallet;
+    address private bufferWallet;
 
     // PoolGuard Trigger On Off
     bool private withdrawalsPaused;
@@ -54,41 +101,43 @@ contract WNTRADES is ReentrancyGuard {
     uint256 private cooldownPeriod;
 
     // Default Safety Parameters
-    uint8 public maxRank = 9;
-    uint8 public maxCapped = 3;
-    uint8 public maxOverRide = 3;
-    uint8 public maxChildren = 100;
-    uint8 public maxCooldown = 1;
-    uint8 public maxTimeDelay = 60;
-    uint8 public maxIteration = 100;
-    uint256 public minWithdraw = 10 * TOKEN_DECIMALS;
-    uint256 public maxWithdraw = 100 * TOKEN_DECIMALS;
+    uint8 public maxRank;
+    uint8 public maxCapped;
+    uint8 public maxOverRide;
+    uint8 public maxChildren;
+    uint8 public maxCooldown;
+    uint8 public maxTimeDelay;
+    uint8 public maxIteration;
+    uint256 public minWithdraw;
+    uint256 public maxWithdraw;
 
     // Default Fee Structure
-    uint256 public regFee = 0 * TOKEN_DECIMALS;
-    uint256 public entryFee = 10 * TOKEN_DECIMALS;
-    uint256 public brokerFee = 1000 * TOKEN_DECIMALS;
+    uint256 public regFee;
+    uint256 public entryFee;
+    uint256 public agentFee;
 
     // Default Reward Rates (in basis points)
-    uint256 public rewardsReferral = 1000;
-    uint256 public rewardsOverRide = 1000;
-    uint256 public rewardsPassiveMin = 100;
-    uint256 public rewardsPassiveMax = 300;
-    uint256 public rewardsBroker = 500;
-    uint256 public rewardsTradePool = 1000;
-    uint256 public rewardsDeduction = 0;
+    uint256 public rewardsReferral;
+    uint256 public rewardsOverRide;
+    uint256 public rewardsPassiveMin;
+    uint256 public rewardsPassiveMax;
+    uint256 public rewardsAgent;
+    uint256 public rewardsProjectFunds;
+    uint256 public rewardsBufferFunds;
+    uint256 public rewardsDeduction;
     
     // Statistics
     uint256 public totalDeposits;
     uint256 public totalRewardsDistributed;
     uint256 public totalWithdrawals;
-    uint256 public totalTradePool;
+    uint256 public totalProjectFunding;
+    uint256 public totalBufferFunding;
  
     // Structs
     struct AffiliateData {
         address parent;
         address[] children;
-        address broker;
+        address agent;
         uint8 level;
     }
     
@@ -99,7 +148,7 @@ contract WNTRADES is ReentrancyGuard {
         uint256 coolDown;
     }
 
-    struct BrokerData {
+    struct AgentData {
         address parent;
         address[] children;
         uint256 fees;
@@ -114,37 +163,34 @@ contract WNTRADES is ReentrancyGuard {
         uint256 coolDown;
     }
 
+    struct VaultData {
+        uint256 amount;     // total deposit amount for this level
+        uint256 coolDown;   // timestamp of last collection or deposit
+        uint256 cap;        // 300% of amount
+    }
+    mapping(address => mapping(uint8 => VaultData)) public vaults;
+
     // Mappings
     mapping(address => AffiliateData) public affiliates;
     mapping(address => WalletData) public wallets;
-    mapping(address => BrokerData) public brokers;
+    mapping(address => AgentData) public agents;
     mapping(address => PassiveData) public passives;
     mapping(address => uint256) private lastCallBlock;
     mapping(address => uint256) private lastCallTime;
 
     // Accounts
     address[] public userAccounts;
-    address[] public brokerAccounts;
+    address[] public agentAccounts;
 
     // ==================== EVENTS ====================
     event InternalTransfer(string method, address indexed from, address indexed to, uint256 amount);
     event AffiliateUpdated(address indexed user, address indexed affiliate);
     event SettingsUpdated(string settingName, uint256 newValue);
-    event BrokerActivated(address indexed broker);
+    event AgentActivated(address indexed agent);
     event AccountActivated(address indexed user, uint8 newLevel);
     event Rewards(string rewardsName, address indexed from, address indexed to, uint256 newValue);
 
     // ==================== MODIFIERS ====================
-    modifier onlyAssetManager() {
-        require(msg.sender == assetManager, "Unauthorized: Asset manager only");
-        _;
-    }
-
-    modifier onlyDevOps() {
-        require(msg.sender == devOps, "Unauthorized: DevOps only");
-        _;
-    }    
-
     modifier isActiveUser() {
         require(wallets[msg.sender].capping > 0, "Inactive user");
         _;
@@ -155,8 +201,8 @@ contract WNTRADES is ReentrancyGuard {
         _;
     }
 
-    modifier isActiveBroker() {
-        require(brokers[msg.sender].isActive, "Inactive broker");
+    modifier isActiveAgent() {
+        require(agents[msg.sender].isActive, "Inactive agent");
         _;
     }
 
@@ -187,13 +233,12 @@ contract WNTRADES is ReentrancyGuard {
     // ==================== CONSTRUCTOR ====================
     constructor() {
         usdtToken = IERC20(0x55d398326f99059fF775485246999027B3197955);
-        devOps = msg.sender;
-        assetManager = msg.sender;
-        arbitrageWallet = msg.sender;
+        projectWallet = address(0x160e91F55D9acCd910737aCBc32d79543B2e0848);
+        bufferWallet = address(0xd486FFAEAD13C421c3A78d752d4ef4BCAf542bbc);
         affiliates[msg.sender] = AffiliateData({
             parent: address(this),
             children: new address[](0),
-            broker: msg.sender,
+            agent: msg.sender,
             level: 10
         });
         userAccounts.push(msg.sender);
@@ -209,65 +254,96 @@ contract WNTRADES is ReentrancyGuard {
             lastDeposit: block.timestamp - SECONDS_IN_A_DAY,
             coolDown: block.timestamp - SECONDS_IN_A_DAY
         });        
-        brokers[msg.sender] = BrokerData({
+        agents[msg.sender] = AgentData({
             parent: address(this),
             children: new address[](0),
-            fees: rewardsBroker,
+            fees: rewardsAgent,
             totalIncome: 0,
             isActive: true
         });
-        brokerAccounts.push(msg.sender);
+        agentAccounts.push(msg.sender);
+
+        regFee = 10 * TOKEN_DECIMALS;
+        entryFee = 50 * TOKEN_DECIMALS;
+        agentFee = 1000 * TOKEN_DECIMALS;
+
+        withdrawalsPaused = false;
+        poolThreshold = 5000;
+        highestBalance = 0;
+        cooldownEndTime = 0;
+        cooldownPeriod = 0;
+
+        maxRank = 9;
+        maxCapped = 3;
+        maxOverRide = 3;
+        maxChildren = 100;
+        maxCooldown = 1;
+        maxTimeDelay = 30;
+        maxIteration = 100;
+        minWithdraw = 20 * TOKEN_DECIMALS;
+        maxWithdraw = 200 * TOKEN_DECIMALS;
+
+        rewardsReferral = 1000;
+        rewardsOverRide = 500;
+        rewardsPassiveMin = 100;
+        rewardsPassiveMax = 300;
+        rewardsAgent = 750;
+        rewardsProjectFunds = 250;
+        rewardsBufferFunds = 4000;
+        rewardsDeduction = 0;
+
     }
 
     // ==================== USER FUNCTIONS ====================
     function register(address _referrer) external nonReentrant antiSpam {
         _validateRegistrationInputs(msg.sender, _referrer);
-        require(usdtToken.balanceOf(address(msg.sender)) >= entryFee, "Insufficient USDT balance");
-        if (regFee > 0 ) {
-            require(usdtToken.transferFrom(msg.sender, assetManager, regFee), "Transfer failed");
-        }
+        require(usdtToken.balanceOf(address(msg.sender)) >= regFee, "Insufficient USDT balance");
+        require(usdtToken.transferFrom(msg.sender, address(this), regFee), "Transfer failed");
         _registerUser(msg.sender, _referrer);
         userAccounts.push(msg.sender);
-    }
-
-    function activateWithDeposit() external nonReentrant antiSpam isRegisteredUser {
-        uint256 upgradeAmount = calculateUpgradeAmount(msg.sender);
-        require(usdtToken.balanceOf(address(msg.sender)) >= entryFee, "Insufficient USDT balance");
-        require(usdtToken.transferFrom(msg.sender, address(this), upgradeAmount), "Transfer failed");
-        totalDeposits += upgradeAmount;
-        _activateAccount(msg.sender, upgradeAmount);
+        _activateAccount(msg.sender, regFee);
         _poolGuard();
     }
 
-    function activateWithWallet() external nonReentrant antiSpam isRegisteredUser {
-        uint256 upgradeAmount = calculateUpgradeAmount(msg.sender);
+    function depositUSDT(uint256 _amount) external nonReentrant antiSpam isRegisteredUser {
+        require(usdtToken.balanceOf(address(msg.sender)) >= _amount, "Insufficient USDT balance");
+        require(usdtToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
+        WalletData storage wallet = wallets[msg.sender];
+        wallet.balance += _amount;
+        wallet.coolDown = block.timestamp + 60 seconds;
+    }
+
+    function activateVIP() external nonReentrant antiSpam isRegisteredUser {
+        AffiliateData memory affiliate = affiliates[msg.sender];
+        uint256 upgradeAmount = calculateUpgradeAmount(affiliate.level);
         WalletData storage wallet = wallets[msg.sender];
         if (wallet.balance < upgradeAmount) revert InsufficientBalance();
+        if (wallet.coolDown < block.timestamp) revert CooldownPeriodActive();
         wallet.balance -= upgradeAmount;
-        _activateAccount(msg.sender, upgradeAmount);
+        _activateAccount(msg.sender, affiliate.level);
         _poolGuard();
     }
 
-    function activateBroker() external nonReentrant antiSpam isRegisteredUser {
+    function activateAgent() external nonReentrant antiSpam isRegisteredUser {
         AffiliateData storage affiliate = affiliates[msg.sender];
         AffiliateData storage affiliateParent = affiliates[affiliate.parent];
 
-        if (brokers[msg.sender].isActive) revert WalletExist();
-        require(brokerFee > 0, "Activation disabled");
-        require(usdtToken.balanceOf(address(msg.sender)) >= brokerFee, "Insufficient USDT balance");
-        require(usdtToken.transferFrom(msg.sender, arbitrageWallet, brokerFee), "Transfer failed"); 
-        brokers[msg.sender] = BrokerData({
-            parent: affiliateParent.broker,
+        if (agents[msg.sender].isActive) revert WalletExist();
+        require(agentFee > 0, "Activation disabled");
+        require(usdtToken.balanceOf(address(msg.sender)) >= agentFee, "Insufficient USDT balance");
+        require(usdtToken.transferFrom(msg.sender, projectWallet, agentFee), "Transfer failed"); 
+        agents[msg.sender] = AgentData({
+            parent: affiliateParent.agent,
             children: new address[](0),
-            fees: rewardsBroker,
+            fees: rewardsAgent,
             totalIncome: 0,
             isActive: true
         });
-        brokerAccounts.push(msg.sender);
-        brokers[affiliateParent.broker].children.push(msg.sender);
-        affiliate.broker = msg.sender;
+        agentAccounts.push(msg.sender);
+        agents[affiliateParent.agent].children.push(msg.sender);
+        affiliate.agent = msg.sender;
         _poolGuard();
-        emit BrokerActivated(msg.sender);
+        emit AgentActivated(msg.sender);
     }
 
     function collectPassive() external nonReentrant antiSpam isActiveUser {
@@ -288,42 +364,44 @@ contract WNTRADES is ReentrancyGuard {
     function withdraw(uint256 _amount) external nonReentrant antiSpam poolGuard isActiveUser {
         WalletData storage wallet = wallets[msg.sender];
         _poolGuard();
-        if (_amount < minWithdraw) revert WithdrawalLimit();
-        if (_amount > maxWithdraw) revert WithdrawalLimit();
-        if (wallet.balance < _amount) revert InsufficientBalance();
-        if (usdtToken.balanceOf(address(this)) < _amount) revert InsufficientBalance();
-        uint256 transferAmount = rewardsDeduction == 0 ? _amount : (_amount * (BASIS_POINTS - rewardsDeduction)) / BASIS_POINTS;
+
+        //$20, $50, $100, $200
+        uint256 transferAmount = calculateWithdrawAmount(_amount);
+        if (transferAmount < minWithdraw) revert WithdrawalLimit();
+        if (transferAmount > maxWithdraw) revert WithdrawalLimit();
+        if (wallet.balance < transferAmount) revert InsufficientBalance();
+        if (usdtToken.balanceOf(address(this)) < transferAmount) revert InsufficientBalance();
         uint256 coolDown = (block.timestamp - wallet.coolDown) / SECONDS_IN_A_DAY;
         if (coolDown < maxCooldown) revert CooldownPeriodActive();
-        require(usdtToken.transfer(msg.sender, transferAmount), "Transfer failed");
-        wallet.balance -= _amount;
+        _safeTransfer( msg.sender, transferAmount);
+        wallet.balance -= transferAmount;
         wallet.coolDown = block.timestamp;
-        totalWithdrawals += _amount;
-        emit InternalTransfer("withdraw", address(this), msg.sender, _amount);
+        totalWithdrawals += transferAmount;
+        emit InternalTransfer("withdraw", address(this), msg.sender, transferAmount);
     }
 
     // ==================== VIEW FUNCTIONS ====================
     function getAffiliateData(address _user) 
-    public view returns ( address parent, address broker, uint8 level, uint256 childrenCount){
+    public view returns ( address parent, address agent, uint8 level, uint256 childrenCount){
         AffiliateData storage affiliate = affiliates[_user];
         return (
             affiliate.parent,
-            affiliate.broker,
+            affiliate.agent,
             affiliate.level,
             affiliate.children.length
         );
     }
 
-    function getBrokerData(address _user) 
+    function getAgentData(address _user) 
     public view returns (address parent, uint256 fees, uint256 totalIncome, bool isActive, uint256 childrenCount) {
-        require(brokers[_user].parent != address(0), "Broker does not exist");
-        BrokerData storage broker = brokers[_user];
+        require(agents[_user].parent != address(0), "Agent does not exist");
+        AgentData storage agent = agents[_user];
         return (
-            broker.parent,
-            broker.fees,
-            broker.totalIncome / TOKEN_DECIMALS,
-            broker.isActive,
-            broker.children.length
+            agent.parent,
+            agent.fees,
+            agent.totalIncome / TOKEN_DECIMALS,
+            agent.isActive,
+            agent.children.length
         );
     }   
 
@@ -335,7 +413,7 @@ contract WNTRADES is ReentrancyGuard {
     public view returns (address[] memory childrenBatch) {
         address[] storage children = _isAffiliate 
             ? affiliates[_user].children 
-            : brokers[_user].children;
+            : agents[_user].children;
         
         uint256 totalChildren = children.length;
         
@@ -366,8 +444,8 @@ contract WNTRADES is ReentrancyGuard {
 
     function getLastCallTime(address _user) 
     public view returns (uint256) {
-        return lastCallTime[_user] == 0 ? block.timestamp : lastCallTime[_user];
-    }
+        return lastCallTime[_user];
+    }    
 
     function getPassiveData(address _user)
     public view returns (uint256 value, uint256 activeIncome, uint256 lastDeposit, uint256 coolDown) {
@@ -398,7 +476,7 @@ contract WNTRADES is ReentrancyGuard {
     function getContractStats() 
     public view returns (
         uint256 totalUsers,
-        uint256 totalBrokers,
+        uint256 totalAgents,
         uint256 contractBalance,
         uint256 _totalDeposits,
         uint256 _totalRewardsDistributed,
@@ -406,7 +484,7 @@ contract WNTRADES is ReentrancyGuard {
     ) {
         return (
             userAccounts.length,
-            brokerAccounts.length,
+            agentAccounts.length,
             usdtToken.balanceOf(address(this)) / TOKEN_DECIMALS,
             totalDeposits / TOKEN_DECIMALS,
             totalRewardsDistributed / TOKEN_DECIMALS,
@@ -429,11 +507,30 @@ contract WNTRADES is ReentrancyGuard {
         );
     }
 
-    function calculateUpgradeAmount(address _user) 
-    public view returns (uint256) {
-        uint8 currentLevel = affiliates[_user].level < maxRank ? affiliates[_user].level : maxRank;
-        return entryFee * (2 ** currentLevel);
+    function calculateUpgradeAmount(uint8 _level)
+    public pure returns (uint256) {
+        uint256[9] memory amounts = [
+            10 * TOKEN_DECIMALS,   // level 0
+            50 * TOKEN_DECIMALS,   // level 1  
+            100 * TOKEN_DECIMALS,  // level 2
+            200 * TOKEN_DECIMALS,  // level 3
+            400 * TOKEN_DECIMALS,  // level 4
+            800 * TOKEN_DECIMALS,  // level 5
+            1600 * TOKEN_DECIMALS, // level 6
+            3200 * TOKEN_DECIMALS, // level 7
+            6400 * TOKEN_DECIMALS  // level 8
+        ];
+        require(_level < amounts.length, "Invalid level");
+        return amounts[_level];
     }
+
+    function calculateWithdrawAmount(uint256 _amount) 
+    public pure returns (uint256) {
+        return _amount < 20000000000000000000 ? 0 
+        : _amount < 50000000000000000000 ? 20000000000000000000 
+        : _amount < 100000000000000000000 ? 50000000000000000000 
+        : _amount < 200000000000000000000 ? 100000000000000000000 : 200000000000000000000;
+    }    
 
     // ==================== PRIVATE FUNCTIONS ====================
     function _registerUser(address _newUser, address _referrer)
@@ -442,11 +539,11 @@ contract WNTRADES is ReentrancyGuard {
         affiliates[_newUser] = AffiliateData({
             parent: _referrer,
             children: new address[](0),
-            broker: affiliate.broker,
+            agent: affiliate.agent,
             level: 0
         });
         affiliates[_referrer].children.push(_newUser);
-        brokers[affiliate.broker].children.push(_newUser);
+        agents[affiliate.agent].children.push(_newUser);
         wallets[_newUser] = WalletData({
             balance: 0,
             capping: 0,
@@ -467,42 +564,61 @@ contract WNTRADES is ReentrancyGuard {
         AffiliateData storage affiliate = affiliates[_user];
         WalletData storage wallet = wallets[_user];
         PassiveData storage passive = passives[_user];
+        VaultData storage vault = vaults[_user][affiliate.level];
         
         // Batch updates
-        affiliate.level += 1;
+        affiliate.level += _amount==entryFee? 1 : 0;
         wallet.capping += _amount * maxCapped;
         passive.value += _amount;
         passive.lastDeposit = block.timestamp;
         passive.coolDown = block.timestamp;
         wallet.coolDown = block.timestamp;
 
+        vault.amount = _amount;
+        vault.coolDown = block.timestamp + 60 seconds;
+        vault.cap += _amount*maxCapped;
+    
+
         _distributeReferralRewards(_user, _amount);
         _distributeOverRideRewards(_user, _amount);
-        _distributeBrokersRewards(_user, affiliate.broker, _amount);
-        _distributeTradePool(_amount);
+        _distributeMasterAgent(affiliate.agent, _amount);
+        _distributeFundings(_amount);
         emit AccountActivated(_user, affiliate.level);
     }
 
-    function _distributeBrokersRewards(address _user, address _broker, uint256 _amount)
+    function _distributeMasterAgent(address _agent, uint256 _amount)
     private {
-        BrokerData storage broker = brokers[_broker];
-        if (!broker.isActive || broker.fees == 0 ) return;
-        uint256 brokerRewards = (_amount * broker.fees) / BASIS_POINTS;
-        address brokerWallet = _user == _broker ? broker.parent : _broker;
-        if (usdtToken.balanceOf(address(this)) >= brokerRewards ) {
-            require(usdtToken.transfer(brokerWallet, brokerRewards), "Transfer failed");
-            broker.totalIncome += brokerRewards;
-            emit Rewards("BrokerRewards", address(this), brokerWallet, brokerRewards);
+        AgentData storage agent = agents[_agent];
+        AgentData storage agentParent = agents[agent.parent];
+        
+        address agentWallet = _agent;
+        uint256 agentRewards = (_amount * agent.fees) / BASIS_POINTS;
+        address masterWallet = agent.parent;
+        uint256 masterRewards = (_amount * agentParent.fees) / BASIS_POINTS;
+        if (usdtToken.balanceOf(address(this)) < (_amount * 750) / BASIS_POINTS) return;
+        if ( agent.fees == 750  ){
+            _safeTransfer(agentWallet, agentRewards);
+            emit Rewards("AgentRewards", address(this), agentWallet, agentRewards);
+        }else{
+            _safeTransfer(agentWallet, agentRewards);
+            emit Rewards("agentRewards", address(this), agentWallet, agentRewards);
+            _safeTransfer(masterWallet, masterRewards);
+            emit Rewards("agentRewards", address(this), masterWallet, masterRewards);
         }
     }
 
-    function _distributeTradePool( uint256 _amount)
+    function _distributeFundings( uint256 _amount)
     private {
-        uint256 tradePool = (_amount * rewardsTradePool) / BASIS_POINTS;
-        if (usdtToken.balanceOf(address(this)) >= tradePool) {
-            require(usdtToken.transfer(arbitrageWallet, tradePool), "Transfer failed");
-            totalTradePool += tradePool;
+        uint256 projectFunding = (_amount * rewardsProjectFunds) / BASIS_POINTS;
+        if (usdtToken.balanceOf(address(this)) >= projectFunding) {
+            _safeTransfer( projectWallet, projectFunding);
+            totalProjectFunding += projectFunding;
         }
+        uint256 bufferFunding = (_amount * rewardsBufferFunds) / BASIS_POINTS;
+        if (usdtToken.balanceOf(address(this)) >= bufferFunding) {
+            _safeTransfer( bufferWallet, bufferFunding);
+            totalBufferFunding += bufferFunding;
+        }        
     }
 
     function _distributeReferralRewards(address _user, uint256 _amount)
@@ -513,7 +629,7 @@ contract WNTRADES is ReentrancyGuard {
         WalletData storage referrerWallet = wallets[referrer];
         PassiveData storage referrerPassive = passives[referrer];
         if (referrerWallet.capping >= reward) {
-            referrerWallet.balance += reward;
+            _safeTransfer( referrer, reward);
             referrerWallet.capping -= reward;
             referrerWallet.totalIncome += reward;
             referrerPassive.activeIncome += reward;
@@ -535,15 +651,18 @@ contract WNTRADES is ReentrancyGuard {
             AffiliateData storage parent = affiliates[currentParent];
             WalletData storage wallet = wallets[currentParent];
             PassiveData storage passive = passives[currentParent];
+            (uint8 level, uint256 highestCap) = _getVaultMaxCap(_user);
 
-            if (currentLevel < parent.level && wallet.capping >= reward) {
+            if (currentLevel < parent.level && highestCap >= reward) {
                 wallet.balance += reward;
                 wallet.capping -= reward;
                 wallet.totalIncome += reward;
-                passive.activeIncome += reward;
                 totalRewardsDistributed += reward;
                 rewardsGiven++;
                 currentLevel = parent.level;
+
+                vaults[currentParent][level].cap -= reward;
+
                 emit Rewards("OverRideRewards", _user, currentParent, reward);
             }
             currentParent = parent.parent;
@@ -600,7 +719,7 @@ contract WNTRADES is ReentrancyGuard {
 
     function _removedChild(address _parent, address _child, bool isAffiliates)
     private {
-        address[] storage children = isAffiliates ? affiliates[_parent].children : brokers[_parent].children;
+        address[] storage children = isAffiliates ? affiliates[_parent].children : agents[_parent].children;
         uint256 length = children.length;
         for (uint256 i = 0; i < length; i++) {
             if (children[i] == _child) {
@@ -628,154 +747,56 @@ contract WNTRADES is ReentrancyGuard {
         }
         if (withdrawalsPaused && block.timestamp >= cooldownEndTime) {
             withdrawalsPaused = false;
+            highestBalance = currentBalance;
         }
     }
 
+    function _safeTransfer(address _user, uint256 _amount) internal {
+        WalletData storage wallet = wallets[_user];
+        if (block.timestamp <= wallet.coolDown + maxTimeDelay) {
+            revert CooldownPeriodActive();
+        }
+        require(usdtToken.transfer(_user, _amount), "Transfer failed");
+        wallet.coolDown = block.timestamp;
+    }
+
+    function _getVaultMaxCap(address _user) private view returns (uint8 level, uint256 highestCap) {
+        for (uint8 i = 0; i < 9; i++) {
+            VaultData storage v = vaults[_user][i];
+            if (v.amount == 0) continue;
+            if (v.cap > highestCap) {
+                highestCap = v.cap;
+                level = i;
+            }
+        }
+    }
+
+function _getVaultMinCap(address _user) private view returns (uint8 level, uint256 minCap) {
+    bool initialized = false;
+
+    for (uint8 i = 0; i < 9; i++) {
+        uint256 cap = vaults[_user][i].cap;
+
+        // Skip empty vaults (optional)
+        if (cap == 0) continue;
+
+        if (!initialized || cap < minCap) {
+            minCap = cap;
+            level = i;
+            initialized = true;
+        }
+    }
+
+    return (level, minCap);
+}
     // ==================== ADMIN FUNCTIONS ====================
-    function updateModifiers(
-        address _newDevOps,
-        address _newAssetManager,
-        address _newArbitrageWallet) 
-    external onlyDevOps {
-        if( _newDevOps!=address(0) && _newDevOps.code.length == 0 ) {
-            devOps = _newDevOps;
-        }
-        if( _newAssetManager!=address(0) && _newDevOps.code.length == 0 ) {
-            assetManager = _newAssetManager;
-        }
-        if( _newArbitrageWallet!=address(0) ) {
-            arbitrageWallet = _newArbitrageWallet;
-        }
-    }  
-
-    function updateRewardsToken(address _newToken) 
-    external onlyAssetManager {
-        require(_newToken != address(0), "Invalid token address");
-        usdtToken = IERC20(_newToken);
-    }     
-
-    function updateFees(
-        uint256 _newRegFee,
-        uint256 _newEntryFee,
-        uint256 _newBrokerFee
-    ) external onlyAssetManager {
-        if (_newRegFee > 0) {
-            regFee = _newRegFee;
-            emit SettingsUpdated("regFee", _newRegFee);
-        }
-        if (_newEntryFee > 0) {
-            entryFee = _newEntryFee;
-            emit SettingsUpdated("entryFee", _newEntryFee);
-        }
-        if (_newBrokerFee >= 0) {
-            brokerFee = _newBrokerFee;
-            emit SettingsUpdated("brokerFee", _newBrokerFee);
-        }
-    }
-
-    function updateSafetyParameters(
-        uint8 _newMaxRank,
-        uint8 _newMaxCapped,
-        uint8 _newMaxOverRide,
-        uint8 _newMaxChildren,
-        uint8 _newMaxCooldown,
-        uint8 _newMaxTimeDelay,
-        uint8 _newMaxIteration,
-        uint256 _newMaxWithdraw,
-        uint256 _newMinWithdraw,
-        uint256 _newRewardsDeduction
-        ) 
-    external onlyAssetManager {
-        if( _newMaxRank>0 ) {
-            maxRank = _newMaxRank;
-            emit SettingsUpdated("maxRank", _newMaxRank);
-        }
-        if( _newMaxCapped>0 ) {
-            maxCapped = _newMaxCapped;
-            emit SettingsUpdated("maxCapped", _newMaxCapped);
-        }    
-        if( _newMaxOverRide>0 ) {
-            maxOverRide = _newMaxOverRide;
-            emit SettingsUpdated("maxOverRide", _newMaxOverRide);
-        }
-        if( _newMaxChildren>0 ) {
-            maxChildren = _newMaxChildren;
-            emit SettingsUpdated("maxChildren", _newMaxChildren);
-        }
-        if( _newMaxTimeDelay>0 ) {
-            maxTimeDelay = _newMaxTimeDelay;
-            emit SettingsUpdated("maxTimeDelay", _newMaxTimeDelay);
-        } 
-        if( _newMaxCooldown>0 ) {
-            maxCooldown = _newMaxCooldown;
-            emit SettingsUpdated("maxCooldown", _newMaxCooldown);
-        }
-        if( _newMaxIteration>0 ) {
-            maxIteration = _newMaxIteration;
-            emit SettingsUpdated("maxIteration", _newMaxIteration);
-        }
-        if( _newMaxWithdraw>0 ) {
-            maxWithdraw = _newMaxWithdraw;
-            emit SettingsUpdated("maxWithdraw", _newMaxWithdraw);
-        } 
-        if( _newMinWithdraw>0 ) {
-            minWithdraw = _newMinWithdraw;
-            emit SettingsUpdated("minWithdraw", _newMinWithdraw);
-        }       
-        if( _newRewardsDeduction>=0 ) {
-            require(_newRewardsDeduction <= BASIS_POINTS, "Invalid rewardsDeduction");
-            rewardsDeduction = _newRewardsDeduction;
-            emit SettingsUpdated("rewardsDeduction", _newRewardsDeduction);
-        }        
-    }
-
-    function updateRewardRates(
-        uint256 _newRewardsReferral,
-        uint256 _newRewardsOverRide,
-        uint256 _newRewardsPassiveMin,
-        uint256 _newRewardsPassiveMax,
-        uint256 _newRewardsBroker,
-        uint256 _newRewardsTradePool,
-        uint256 _newRewardsDeduction
-        ) 
-    external onlyAssetManager {
-        if( _newRewardsReferral>0 ) {
-            rewardsReferral = _newRewardsReferral;
-            emit SettingsUpdated("rewardsReferral", _newRewardsReferral);
-        }
-        if( _newRewardsOverRide>0 ) {
-            rewardsOverRide = _newRewardsOverRide;
-            emit SettingsUpdated("rewardsOverRide", _newRewardsOverRide);
-        }
-        if( _newRewardsPassiveMin>0 ) {
-            rewardsPassiveMin = _newRewardsPassiveMin;
-            emit SettingsUpdated("rewardsPassiveMin", _newRewardsPassiveMin);
-        }
-        if( _newRewardsPassiveMax>0 ) {
-            rewardsPassiveMax = _newRewardsPassiveMax;
-            emit SettingsUpdated("rewardsPassiveMax", _newRewardsPassiveMax);
-        }        
-        if( _newRewardsBroker>0 ) {
-            rewardsBroker = _newRewardsBroker;
-            emit SettingsUpdated("rewardsBroker", _newRewardsBroker);
-        }        
-        if( _newRewardsTradePool>0 ) {
-            rewardsTradePool = _newRewardsTradePool;
-            emit SettingsUpdated("rewardsTradePool", _newRewardsTradePool);
-        }
-        if( _newRewardsDeduction>0 ) {
-            rewardsDeduction = _newRewardsDeduction;
-            emit SettingsUpdated("rewardsDeduction", _newRewardsDeduction);
-        }           
-    }
-
     function updateWalletData(
         address _user,
         uint256 _balance,
         uint256 _capping,
         uint256 _totalIncome,
         uint256 _coolDown) 
-    external onlyAssetManager {
+    external onlyOwner {
         require(wallets[_user].coolDown>0 , "Wallet Not Found");
         WalletData storage wallet = wallets[_user];
         if( _balance > 0 ) wallet.balance =  _balance;
@@ -790,7 +811,7 @@ contract WNTRADES is ReentrancyGuard {
         uint256 _activeIncome,
         uint256 _lastDeposit,
         uint256 _coolDown)
-    external onlyAssetManager {
+    external onlyOwner {
         require(wallets[_user].coolDown>0 , "Wallet Not Found");
         PassiveData storage passive = passives[_user];
         if( _value > 0 ) passive.value =  _value;
@@ -802,9 +823,9 @@ contract WNTRADES is ReentrancyGuard {
     function updateAffiliateData(
         address _user,
         address _parent,
-        address _broker,
+        address _agent,
         uint8 _level)
-    external onlyAssetManager {
+    external onlyOwner {
         AffiliateData storage affiliate = affiliates[_user];
         if( _level > 0 ) affiliate.level =  _level;
         if( _parent != address(0) ){
@@ -814,47 +835,32 @@ contract WNTRADES is ReentrancyGuard {
             AffiliateData storage parent = affiliates[_parent];
             parent.children.push(_user);
         }
-        if( _broker != address(0) ){
-            address oldBroker = affiliate.broker;
-            _removedChild(oldBroker,_user, false );
-            affiliate.broker =  _broker;
-            BrokerData storage broker = brokers[_broker];
-            broker.children.push(_user);
+        if( _agent != address(0) ){
+            address oldAgent = affiliate.agent;
+            _removedChild(oldAgent,_user, false );
+            affiliate.agent =  _agent;
+            AgentData storage agent = agents[_agent];
+            agent.children.push(_user);
         }
     }
 
-    function updateBrokerData(
+    function updateAgentData(
         address _user,
         address _parent,
         uint256 _fees,
         uint256 _totalIncome,
         bool _isActive)
-    external onlyAssetManager {
-        require(brokers[_user].parent != address(0), "Broker does not exist");
-        BrokerData storage broker = brokers[_user];
-        if(_parent != address(0)) {
-            require(brokers[_parent].isActive, "Parent not active");
-            broker.parent = _parent;
-            _removedChild(_parent, _user, false);
-            brokers[_parent].children.push(_user);
-        }
-        if(_fees > 0) broker.fees = _fees;
-        if(_totalIncome > 0) broker.totalIncome = _totalIncome;
-        if(_isActive != broker.isActive) broker.isActive = _isActive;
-    }
+    external onlyOwner {
+        AgentData storage agent = agents[_user];
+        require(agent.parent != address(0), "Agent does not exist");
 
-    function updatePoolGuardData(
-        uint256 _newPoolThreshold,
-        uint256 _newHighestBalance,
-        uint256 _newCooldownEndTime,
-        uint256 _newCooldownPeriod,
-        bool _withdrawalsPaused
-        )
-    external onlyAssetManager {
-        if(_newPoolThreshold > 0) poolThreshold = _newPoolThreshold;
-        if(_newHighestBalance > 0) highestBalance = _newHighestBalance;
-        if(_newCooldownEndTime > 0) cooldownEndTime = _newCooldownEndTime;
-        if(_newCooldownPeriod > 0) cooldownPeriod = _newCooldownPeriod;
-        if(_withdrawalsPaused != withdrawalsPaused) withdrawalsPaused = _withdrawalsPaused;
+        if(_parent != address(0)) {
+            agent.parent = _parent;
+            _removedChild(_parent, _user, false);
+            agents[_parent].children.push(_user);
+        }
+        if(_fees > 0) agent.fees = _fees;
+        if(_totalIncome > 0) agent.totalIncome = _totalIncome;
+        if(_isActive != agent.isActive) agent.isActive = _isActive;
     }
 }

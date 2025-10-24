@@ -88,9 +88,9 @@ const protectedRoutes = {
               }),
             },
             {
-              path: "leadership",
+              path: "royalty",
               lazy: async () => ({
-                Component: (await import("app/pages/rewards")).Leadership,
+                Component: (await import("app/pages/rewards")).Royalty,
               }),
             },
             {

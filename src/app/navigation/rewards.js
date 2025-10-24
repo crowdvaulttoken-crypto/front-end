@@ -23,11 +23,11 @@ export const rewards = {
             Icon: UsersIcon,
         },
         {
-            id: 'rewards.leadership',
-            path: path(ROOT_REWARDS, '/leadership'),
+            id: 'rewards.royalty',
+            path: path(ROOT_REWARDS, '/royalty'),
             type: NAV_TYPE_ITEM,
-            title: 'Leadership',
-            transKey: 'Leadership',
+            title: 'Royalty',
+            transKey: 'Royalty',
             Icon: ChartBarIcon,
         },
         {

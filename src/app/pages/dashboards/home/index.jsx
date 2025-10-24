@@ -302,30 +302,15 @@ export function Home2() {
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
-                    <CircleStackIcon className="size-9" />
+                    <ChevronDoubleUpIcon className="size-9" />
                   </Button>
                 </div>
                 <div  className="flex flex-wrap justify-start text-sm">
-                    <h3>Community Pool</h3>
+                    <h3>Current VIP</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    $1,000,000.00
-                </div>                
-              </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
-              <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
-                <div  className="flex flex-wrap justify-start mb-10">
-                  <Button color="primary" isGlow isIcon className="size-12">
-                    <ChartBarIcon className="size-9" />
-                  </Button>
+                    0
                 </div>
-                <div  className="flex flex-wrap justify-start text-sm">
-                    <h3>Total Income</h3>
-                </div>
-                <div className="flex flex-wrap justify-start text-lg">
-                    $0.00
-                </div>                
               </div>
           </div>
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
@@ -342,246 +327,196 @@ export function Home2() {
                     $0.00
                 </div>                
               </div>
+          </div>          
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
+              <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
+                <div  className="flex flex-wrap justify-start mb-10">
+                  <Button color="primary" isGlow isIcon className="size-12">
+                    <CircleStackIcon className="size-9" />
+                  </Button>
+                </div>
+                <div  className="flex flex-wrap justify-start text-sm">
+                    <h3>USDT Balance</h3>
+                </div>
+                <div className="flex flex-wrap justify-start text-lg">
+                    $0.00
+                </div>                
+              </div>
           </div>
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
-                    <ChevronDoubleUpIcon className="size-9" />
+                    <ChartBarIcon className="size-9" />
                   </Button>
                 </div>
                 <div  className="flex flex-wrap justify-start text-sm">
-                    <h3>Current VIP</h3>
+                    <h3>Total Income</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    0
-                </div>                
+                    $0.00
+                </div>
               </div>
-          </div>
+          </div>          
         </div>
         <div className="flex flex-wrap justify-start gap-0">
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
             <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-center">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$0</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                </div>                
                 <Circlebar
                   value={300/300*100}
                   className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
                 >
                   <span className="text-lg font-medium text-white">{300}%</span>
-                </Circlebar>              
+                </Circlebar>
               </div>
-              <div className="mt-3 font-semibold text-white">VIP Guest</div>
               <Button
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                Completed
+                Starter: Completed
               </Button>
+            </div>
+          </div>
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$30</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                </div>
+                <Circlebar
+                  value={300/300*100}
+                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
+                >
+                  <span className="text-lg font-medium text-white">{300}%</span>
+                </Circlebar>
+              </div>
+              <Button
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                VIP1: Completed 
+              </Button>
+            </div>
+          </div>
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+            <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$150</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$1.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">01:00:00:00</div>
+                </div>
+                <Circlebar color="secondary" value={150/300*100} isActive>
+                  <span className="text-lg font-medium text-gray-100 dark:text-dark-100">
+                    {150/300*100}%
+                  </span>
+                </Circlebar>
+              </div>
+              <Button
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                VIP2: Collect
+              </Button>
+    
             </div>
           </div>
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
             <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$300</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                </div>                
                 <Circlebar
-                  value={200/300*100}
+                  value={0/300*100}
                   className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
                 >
-                  <span className="text-lg font-medium text-white">{200}%</span>
+                  <span className="text-lg font-medium text-white">{0}%</span>
                 </Circlebar>
-                <Circlebar
-                  value={100/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{100}%</span>
-                </Circlebar>              
               </div>
-              <div className="mt-3 font-semibold text-white">VIP 1</div>
               <Button
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                Completed
-              </Button>
-            </div>
-          </div>          
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-green-400 to-blue-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  color="primary"
-                  value={150/300*100}
-                  isActive
-                >
-                  <span className="text-lg font-medium text-white text-gray-800 dark:text-dark-100">{150}%</span>
-                </Circlebar>
-                <Circlebar
-                  color="primary"
-                  value={75/300*100}
-                  isActive
-                >
-                  <span className="text-lg font-medium text-white">{75}%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 2</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Collect
+                VIP3: Activate 100 USDT
               </Button>
             </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-green-400 to-blue-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={300*0.05}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">5%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 3</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Collect
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 4</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Activate
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 5</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Activate
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 6</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Activate
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 7</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Activate
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex justify-between">
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>
-                <Circlebar
-                  value={0}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">0%</span>
-                </Circlebar>              
-              </div>
-              <div className="mt-3 font-semibold text-white">VIP 8</div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Activate
-              </Button>
-            </div>
-          </div>          
 
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$600</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                </div>                
+                <Circlebar
+                  value={0/300*100}
+                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
+                >
+                  <span className="text-lg font-medium text-white">{0}%</span>
+                </Circlebar>
+              </div>
+              <Button
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                VIP4: Activate 200 USDT
+              </Button>
+            </div>
+          </div>
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">$1,200</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                </div>                
+                <Circlebar
+                  value={0/300*100}
+                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
+                >
+                  <span className="text-lg font-medium text-white">{0}%</span>
+                </Circlebar>
+              </div>
+              <Button
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                VIP5: Activate 400 USDT
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </Page>

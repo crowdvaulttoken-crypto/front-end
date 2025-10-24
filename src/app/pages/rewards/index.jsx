@@ -15,13 +15,13 @@ export default function Referral() {
   );
 }
 
-export function Leadership() {
+export function Royalty() {
     return (
       <Page title="Rewards">
         <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
           <div className="min-w-0">
             <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
-            Leadership
+            Royalty
             </h2>
             5% of the activation and upgrade of your group sales distributed to the first 3 qualified higher rank.
           </div>
