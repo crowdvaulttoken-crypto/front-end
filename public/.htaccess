@@ -5,7 +5,7 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Redirect from WWW to non-WWW
 RewriteEngine On
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
 # Exclude /shop and /wp (WordPress) from React routing
 RewriteCond %{REQUEST_URI} ^/(auth|api|react)
