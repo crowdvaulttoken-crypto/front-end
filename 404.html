@@ -1,0 +1,19 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+      // Get the path from the URL
+      var path = window.location.pathname;
+      // Convert the path into a query string
+      var queryString = path.substring(1).replace(/\//g, "~"); // Example: /about/us -> about~us
+      // Redirect to the index.html with the query string and a hash fragment
+      //window.location.replace("index.html?p=" + queryString + window.location.hash );
+      //window.location.replace("/xtrades");
+      window.location = location.protocol + '//' + location.hostname;
+    </script>
+  </head>
+  <body></body>
+</html>
