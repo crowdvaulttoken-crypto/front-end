@@ -106,8 +106,8 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     uint8 public maxOverRide;
     uint8 public maxChildren;
     uint8 public maxCooldown;
-    uint8 public maxTimeDelay;
     uint8 public maxIteration;
+    uint8 public maxTimeDelay;
     uint256 public minWithdraw;
     uint256 public maxWithdraw;
 
@@ -119,12 +119,10 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     // Default Reward Rates (in basis points)
     uint256 public rewardsReferral;
     uint256 public rewardsOverRide;
-    uint256 public rewardsPassiveMin;
-    uint256 public rewardsPassiveMax;
+    uint256 public rewardsPassivePct;
     uint256 public rewardsAgent;
     uint256 public rewardsProjectFunds;
     uint256 public rewardsBufferFunds;
-    uint256 public rewardsDeduction;
     
     // Statistics
     uint256 public totalDeposits;
@@ -143,7 +141,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     
     struct WalletData {
         uint256 balance;
-        uint256 capping;
         uint256 totalIncome;
         uint256 coolDown;
     }
@@ -156,17 +153,10 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         bool isActive;
     }
 
-    struct PassiveData {
-        uint256 value;
-        uint256 activeIncome;
-        uint256 lastDeposit;
-        uint256 coolDown;
-    }
-
     struct VaultData {
-        uint256 amount;     // total deposit amount for this level
-        uint256 coolDown;   // timestamp of last collection or deposit
-        uint256 cap;        // 300% of amount
+        uint256 amount;
+        uint256 cap;
+        uint256 coolDown;
     }
     mapping(address => mapping(uint8 => VaultData)) public vaults;
 
@@ -174,7 +164,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     mapping(address => AffiliateData) public affiliates;
     mapping(address => WalletData) public wallets;
     mapping(address => AgentData) public agents;
-    mapping(address => PassiveData) public passives;
     mapping(address => uint256) private lastCallBlock;
     mapping(address => uint256) private lastCallTime;
 
@@ -184,6 +173,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
 
     // ==================== EVENTS ====================
     event InternalTransfer(string method, address indexed from, address indexed to, uint256 amount);
+    event WithdrawBalance(address indexed from, address indexed to, uint256 amount);
+    event DepositBalance(address indexed from, address indexed to, uint256 amount);
+
     event AffiliateUpdated(address indexed user, address indexed affiliate);
     event SettingsUpdated(string settingName, uint256 newValue);
     event AgentActivated(address indexed agent);
@@ -191,11 +183,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     event Rewards(string rewardsName, address indexed from, address indexed to, uint256 newValue);
 
     // ==================== MODIFIERS ====================
-    modifier isActiveUser() {
-        require(wallets[msg.sender].capping > 0, "Inactive user");
-        _;
-    }
-
     modifier isRegisteredUser() {
         require(affiliates[msg.sender].parent != address(0), "Unregistered user");
         _;
@@ -213,16 +200,17 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
 
     modifier antiSpam() {
         require(msg.sender == tx.origin, "AntiBot: EOAs only");
-        require(lastCallBlock[tx.origin]==0 || lastCallBlock[tx.origin] != block.number, "AntiBot: one call per block");
-        require(lastCallTime[tx.origin]==0 || block.timestamp >= lastCallTime[tx.origin] + maxTimeDelay, "AntiBot: cooldown active");
-        lastCallBlock[tx.origin] = block.number;
-        lastCallTime[tx.origin] = block.timestamp;
+        require(msg.sender.code.length == 0, "AntiBot: Contract not allowed");
+        require(lastCallBlock[msg.sender] != block.number, "AntiBot: one call per block");
+        if (lastCallTime[msg.sender] != 0) { require(block.timestamp >= lastCallTime[msg.sender] + maxTimeDelay, "AntiBot: cooldown active");}
         _;
     }
 
     // ==================== ERRORS ====================
     error InvalidAddress();
     error CooldownPeriodActive();
+    error InvalidBlock();
+    error VaultIsActive();
     error InsufficientBalance();
     error WithdrawalLimit();
     error WalletExist();
@@ -232,28 +220,48 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
 
     // ==================== CONSTRUCTOR ====================
     constructor() {
+        regFee = 10 * TOKEN_DECIMALS;
+        entryFee = 50 * TOKEN_DECIMALS;
+        agentFee = 1000 * TOKEN_DECIMALS;
+        withdrawalsPaused = false;
+        poolThreshold = 5000;
+        highestBalance = 0;
+        cooldownEndTime = 0;
+        cooldownPeriod = 3 hours;
+        maxRank = 8;
+        maxCapped = 3;
+        maxOverRide = 3;
+        maxChildren = 100;
+        maxCooldown = 1;
+        maxIteration = 100;
+        maxTimeDelay = 6 seconds;
+        minWithdraw = 20 * TOKEN_DECIMALS;
+        maxWithdraw = 200 * TOKEN_DECIMALS;
+        rewardsReferral = 1000;
+        rewardsOverRide = 500;
+        rewardsPassivePct = 200;
+        rewardsAgent = 750;
+        rewardsProjectFunds = 250;
+        rewardsBufferFunds = 4000;
+
         usdtToken = IERC20(0x55d398326f99059fF775485246999027B3197955);
         projectWallet = address(0x160e91F55D9acCd910737aCBc32d79543B2e0848);
         bufferWallet = address(0xd486FFAEAD13C421c3A78d752d4ef4BCAf542bbc);
+
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
         affiliates[msg.sender] = AffiliateData({
             parent: address(this),
             children: new address[](0),
             agent: msg.sender,
-            level: 10
+            level: maxRank
         });
         userAccounts.push(msg.sender);
         wallets[msg.sender] = WalletData({
             balance: 10240 * TOKEN_DECIMALS,
-            capping: 10240 * TOKEN_DECIMALS * 3,
             totalIncome: 0,
             coolDown: block.timestamp
-        });
-        passives[msg.sender] = PassiveData({
-            value: 10240 * TOKEN_DECIMALS,
-            activeIncome: 0,
-            lastDeposit: block.timestamp - SECONDS_IN_A_DAY,
-            coolDown: block.timestamp - SECONDS_IN_A_DAY
-        });        
+        });   
         agents[msg.sender] = AgentData({
             parent: address(this),
             children: new address[](0),
@@ -262,66 +270,45 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
             isActive: true
         });
         agentAccounts.push(msg.sender);
-
-        regFee = 10 * TOKEN_DECIMALS;
-        entryFee = 50 * TOKEN_DECIMALS;
-        agentFee = 1000 * TOKEN_DECIMALS;
-
-        withdrawalsPaused = false;
-        poolThreshold = 5000;
-        highestBalance = 0;
-        cooldownEndTime = 0;
-        cooldownPeriod = 0;
-
-        maxRank = 9;
-        maxCapped = 3;
-        maxOverRide = 3;
-        maxChildren = 100;
-        maxCooldown = 1;
-        maxTimeDelay = 30;
-        maxIteration = 100;
-        minWithdraw = 20 * TOKEN_DECIMALS;
-        maxWithdraw = 200 * TOKEN_DECIMALS;
-
-        rewardsReferral = 1000;
-        rewardsOverRide = 500;
-        rewardsPassiveMin = 100;
-        rewardsPassiveMax = 300;
-        rewardsAgent = 750;
-        rewardsProjectFunds = 250;
-        rewardsBufferFunds = 4000;
-        rewardsDeduction = 0;
-
     }
 
     // ==================== USER FUNCTIONS ====================
     function register(address _referrer) external nonReentrant antiSpam {
         _validateRegistrationInputs(msg.sender, _referrer);
-        require(usdtToken.balanceOf(address(msg.sender)) >= regFee, "Insufficient USDT balance");
-        require(usdtToken.transferFrom(msg.sender, address(this), regFee), "Transfer failed");
         _registerUser(msg.sender, _referrer);
         userAccounts.push(msg.sender);
-        _activateAccount(msg.sender, regFee);
-        _poolGuard();
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
     }
 
-    function depositUSDT(uint256 _amount) external nonReentrant antiSpam isRegisteredUser {
+    function depositBalance(uint256 _amount) external nonReentrant antiSpam isRegisteredUser {
         require(usdtToken.balanceOf(address(msg.sender)) >= _amount, "Insufficient USDT balance");
         require(usdtToken.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         WalletData storage wallet = wallets[msg.sender];
         wallet.balance += _amount;
-        wallet.coolDown = block.timestamp + 60 seconds;
+        wallet.coolDown = block.timestamp + maxTimeDelay;
+        _distributeFundings(_amount);
+        _poolGuard();
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
+        emit DepositBalance(msg.sender, address(this), _amount);
     }
 
     function activateVIP() external nonReentrant antiSpam isRegisteredUser {
-        AffiliateData memory affiliate = affiliates[msg.sender];
-        uint256 upgradeAmount = calculateUpgradeAmount(affiliate.level);
+        AffiliateData storage affiliate = affiliates[msg.sender];
+        uint8 level = affiliate.level>=maxRank ? maxRank : affiliate.level;
+        uint256 upgradeAmount = calculateUpgradeAmount(level);
         WalletData storage wallet = wallets[msg.sender];
+        VaultData storage vault = vaults[msg.sender][level];
+        if (vault.cap>0 && level<maxRank) revert  VaultIsActive();
         if (wallet.balance < upgradeAmount) revert InsufficientBalance();
-        if (wallet.coolDown < block.timestamp) revert CooldownPeriodActive();
         wallet.balance -= upgradeAmount;
-        _activateAccount(msg.sender, affiliate.level);
+        wallet.coolDown = block.timestamp + maxTimeDelay;
+        affiliate.level +=1;
+        _activateAccount(msg.sender, upgradeAmount, level);
         _poolGuard();
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
     }
 
     function activateAgent() external nonReentrant antiSpam isRegisteredUser {
@@ -331,7 +318,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         if (agents[msg.sender].isActive) revert WalletExist();
         require(agentFee > 0, "Activation disabled");
         require(usdtToken.balanceOf(address(msg.sender)) >= agentFee, "Insufficient USDT balance");
-        require(usdtToken.transferFrom(msg.sender, projectWallet, agentFee), "Transfer failed"); 
+        require(usdtToken.transferFrom(msg.sender, projectWallet, agentFee), "Transfer failed");
+        totalDeposits += agentFee;
+        totalProjectFunding += agentFee;
         agents[msg.sender] = AgentData({
             parent: affiliateParent.agent,
             children: new address[](0),
@@ -343,29 +332,31 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         agents[affiliateParent.agent].children.push(msg.sender);
         affiliate.agent = msg.sender;
         _poolGuard();
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
         emit AgentActivated(msg.sender);
     }
 
-    function collectPassive() external nonReentrant antiSpam isActiveUser {
-        PassiveData storage passive = passives[msg.sender];
+    function collectPassive(uint8 _level) external nonReentrant antiSpam {
         WalletData storage wallet = wallets[msg.sender];
-        uint256 passiveRewards = _calculatePassiveReward(msg.sender);
-        if (block.timestamp < passive.coolDown + SECONDS_IN_A_DAY) revert CooldownPeriodActive();
-        if (wallet.capping < passiveRewards) revert InsufficientBalance();
+        VaultData storage vault = vaults[msg.sender][_level];
+        uint256 passiveRewards = _calculatePassiveReward(msg.sender, _level);
+        if (vault.cap == 0 ) revert InsufficientBalance();
+        if (block.timestamp < vault.coolDown + SECONDS_IN_A_DAY) revert CooldownPeriodActive();
         wallet.balance += passiveRewards;
-        wallet.capping -= passiveRewards;
         wallet.totalIncome += passiveRewards;
-        passive.coolDown = block.timestamp;
+        vault.cap -= passiveRewards;
+        vault.coolDown = block.timestamp;
         totalRewardsDistributed += passiveRewards;
         _poolGuard();
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
         emit InternalTransfer("passive", address(this), msg.sender, passiveRewards);
     }
 
-    function withdraw(uint256 _amount) external nonReentrant antiSpam poolGuard isActiveUser {
+    function withdrawBalance(uint256 _amount) external nonReentrant antiSpam poolGuard {
         WalletData storage wallet = wallets[msg.sender];
         _poolGuard();
-
-        //$20, $50, $100, $200
         uint256 transferAmount = calculateWithdrawAmount(_amount);
         if (transferAmount < minWithdraw) revert WithdrawalLimit();
         if (transferAmount > maxWithdraw) revert WithdrawalLimit();
@@ -377,7 +368,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         wallet.balance -= transferAmount;
         wallet.coolDown = block.timestamp;
         totalWithdrawals += transferAmount;
-        emit InternalTransfer("withdraw", address(this), msg.sender, transferAmount);
+        lastCallBlock[msg.sender] = block.number;
+        lastCallTime[msg.sender] = block.timestamp;
+        emit WithdrawBalance(address(this), msg.sender, transferAmount);
     }
 
     // ==================== VIEW FUNCTIONS ====================
@@ -432,45 +425,38 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     }
 
     function getWalletData(address _user)
-    public view returns (uint256 balance, uint256 capping, uint256 totalIncome, uint256 coolDown) {
+    public view returns (uint256 balance, uint256 totalIncome, uint256 coolDown) {
         WalletData storage wallet = wallets[_user];
         return (
             wallet.balance / TOKEN_DECIMALS,
-            wallet.capping / TOKEN_DECIMALS,
             wallet.totalIncome / TOKEN_DECIMALS,
             wallet.coolDown
         );
     }
 
-    function getLastCallTime(address _user) 
+    function getLastBlockTime(address _user) 
     public view returns (uint256) {
         return lastCallTime[_user];
+    }
+
+    function getLastBlockNumber(address _user) 
+    public view returns (uint256) {
+        return lastCallBlock[_user];
     }    
 
-    function getPassiveData(address _user)
-    public view returns (uint256 value, uint256 activeIncome, uint256 lastDeposit, uint256 coolDown) {
-        PassiveData storage passive = passives[_user];
+    function getVaultData(address _user,uint8 _level)
+    public view returns (uint256 amount, uint256 cap, uint256 coolDown) {
+        VaultData storage vault = vaults[_user][_level];
         return (
-            passive.value / TOKEN_DECIMALS,
-            passive.activeIncome / TOKEN_DECIMALS,
-            passive.lastDeposit,
-            passive.coolDown
+            vault.amount / TOKEN_DECIMALS,
+            vault.cap / TOKEN_DECIMALS,
+            vault.coolDown
         );
-    }    
-
-    function getPassivePercent(address _user) 
-    public view returns (uint256) {
-        return _calculatePassivePct(_user);
     }
 
-    function getPassiveReward(address _user) 
+    function getPassiveReward(address _user, uint8 _level) 
     public view returns (uint256) {
-        return _calculatePassiveReward(_user) / TOKEN_DECIMALS ;
-    }
-
-    function getAvailableEquity(uint8 _currentLevel, uint256 _totalIncome) 
-    public view returns (uint256) {
-        return _calculateAvailableEquity(_currentLevel, _totalIncome) / TOKEN_DECIMALS;
+        return _calculatePassiveReward(_user,_level) / TOKEN_DECIMALS ;
     }
 
     function getContractStats() 
@@ -507,8 +493,14 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         );
     }
 
+    function getActiveVault(address _user, uint256 reward )
+    public view returns (uint _level, uint256 _lowestCap ){
+        (uint8 level, uint256 lowestCap) = _getVaultMinCap(_user, reward);
+        return ( level, lowestCap);
+    }
+
     function calculateUpgradeAmount(uint8 _level)
-    public pure returns (uint256) {
+    public view returns (uint256) {
         uint256[9] memory amounts = [
             10 * TOKEN_DECIMALS,   // level 0
             50 * TOKEN_DECIMALS,   // level 1  
@@ -520,8 +512,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
             3200 * TOKEN_DECIMALS, // level 7
             6400 * TOKEN_DECIMALS  // level 8
         ];
-        require(_level < amounts.length, "Invalid level");
-        return amounts[_level];
+        //require(_level < amounts.length, "Invalid level");
+        uint8 level = _level < amounts.length ? _level : maxRank;
+        return amounts[level];
     }
 
     function calculateWithdrawAmount(uint256 _amount) 
@@ -546,43 +539,27 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         agents[affiliate.agent].children.push(_newUser);
         wallets[_newUser] = WalletData({
             balance: 0,
-            capping: 0,
             totalIncome: 0,
-            coolDown: block.timestamp
+            coolDown: block.timestamp + maxTimeDelay
         });
-        passives[_newUser] = PassiveData({
-            value: 0,
-            activeIncome: 0,
-            lastDeposit: 0,
-            coolDown: 0
-        });
+        lastCallBlock[_newUser] = block.number;
+        lastCallTime[_newUser] = block.timestamp;
     }
 
-    function _activateAccount(address _user, uint256 _amount)
+    function _activateAccount(address _user, uint256 _amount, uint8 _level)
     private {
 
-        AffiliateData storage affiliate = affiliates[_user];
-        WalletData storage wallet = wallets[_user];
-        PassiveData storage passive = passives[_user];
-        VaultData storage vault = vaults[_user][affiliate.level];
+        AffiliateData memory affiliate = affiliates[_user];
+        VaultData storage vault = vaults[_user][_level];
         
         // Batch updates
-        affiliate.level += _amount==entryFee? 1 : 0;
-        wallet.capping += _amount * maxCapped;
-        passive.value += _amount;
-        passive.lastDeposit = block.timestamp;
-        passive.coolDown = block.timestamp;
-        wallet.coolDown = block.timestamp;
-
         vault.amount = _amount;
-        vault.coolDown = block.timestamp + 60 seconds;
+        vault.coolDown = block.timestamp + maxTimeDelay;
         vault.cap += _amount*maxCapped;
     
-
         _distributeReferralRewards(_user, _amount);
         _distributeOverRideRewards(_user, _amount);
         _distributeMasterAgent(affiliate.agent, _amount);
-        _distributeFundings(_amount);
         emit AccountActivated(_user, affiliate.level);
     }
 
@@ -595,15 +572,17 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         uint256 agentRewards = (_amount * agent.fees) / BASIS_POINTS;
         address masterWallet = agent.parent;
         uint256 masterRewards = (_amount * agentParent.fees) / BASIS_POINTS;
-        if (usdtToken.balanceOf(address(this)) < (_amount * 750) / BASIS_POINTS) return;
-        if ( agent.fees == 750  ){
-            _safeTransfer(agentWallet, agentRewards);
-            emit Rewards("AgentRewards", address(this), agentWallet, agentRewards);
-        }else{
-            _safeTransfer(agentWallet, agentRewards);
+        if ( agent.fees == 0 ) return;
+        if ( usdtToken.balanceOf(address(this)) < (_amount * rewardsAgent) / BASIS_POINTS ) return;
+        uint256 agentFees = agent.fees;
+        uint256 masterFees = rewardsAgent - agent.fees;
+        if ( agentFees > 0 ){
+            require(usdtToken.transfer(agentWallet, agentRewards), "Transfer failed");
             emit Rewards("agentRewards", address(this), agentWallet, agentRewards);
-            _safeTransfer(masterWallet, masterRewards);
-            emit Rewards("agentRewards", address(this), masterWallet, masterRewards);
+        }
+        if ( masterFees > 0 ){
+            require(usdtToken.transfer(masterWallet, masterRewards), "Transfer failed");
+            emit Rewards("masterRewards", address(this), masterWallet, masterRewards);
         }
     }
 
@@ -611,36 +590,38 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     private {
         uint256 projectFunding = (_amount * rewardsProjectFunds) / BASIS_POINTS;
         if (usdtToken.balanceOf(address(this)) >= projectFunding) {
-            _safeTransfer( projectWallet, projectFunding);
+            require(usdtToken.transfer(projectWallet, projectFunding), "Transfer failed");
             totalProjectFunding += projectFunding;
+            emit Rewards("projectFunding", projectWallet, address(this), projectFunding);
         }
         uint256 bufferFunding = (_amount * rewardsBufferFunds) / BASIS_POINTS;
         if (usdtToken.balanceOf(address(this)) >= bufferFunding) {
-            _safeTransfer( bufferWallet, bufferFunding);
+            require(usdtToken.transfer(bufferWallet, bufferFunding), "Transfer failed");
             totalBufferFunding += bufferFunding;
+            emit Rewards("bufferFunding", bufferWallet, address(this), bufferFunding);
         }        
     }
 
     function _distributeReferralRewards(address _user, uint256 _amount)
     private {
         address referrer = affiliates[_user].parent;
-        if (referrer == address(0)) return;
-        uint256 reward = (_amount * rewardsReferral) / BASIS_POINTS;
+        if (referrer == address(0) || referrer == address(this) ) return;
         WalletData storage referrerWallet = wallets[referrer];
-        PassiveData storage referrerPassive = passives[referrer];
-        if (referrerWallet.capping >= reward) {
-            _safeTransfer( referrer, reward);
-            referrerWallet.capping -= reward;
-            referrerWallet.totalIncome += reward;
-            referrerPassive.activeIncome += reward;
-            totalRewardsDistributed += reward;
-            emit Rewards("ReferralRewards", _user, referrer, reward);
-        }
+        uint256 reward = (_amount * rewardsReferral) / BASIS_POINTS;
+        (uint8 level, uint256 lowestCap) = _getVaultMinCap(referrer, reward);
+        VaultData storage vault = vaults[referrer][level];
+        if( lowestCap==0 ) return;
+        reward = lowestCap >= reward ? reward : lowestCap;
+        _safeTransfer( referrer, reward );
+        referrerWallet.totalIncome += reward;
+        totalRewardsDistributed += reward;
+        vault.cap -= reward;
+        emit Rewards("ReferralRewards", _user, referrer, reward);
     }
 
     function _distributeOverRideRewards(address _user, uint256 _amount)
     private {
-        AffiliateData storage affiliate = affiliates[_user];
+        AffiliateData memory affiliate = affiliates[_user];
         address currentParent = affiliate.parent;
         uint256 reward = (_amount * rewardsOverRide) / BASIS_POINTS;
         uint8 currentLevel = affiliate.level;
@@ -648,21 +629,19 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         uint8 levelsTraversed = 0;
         if (currentLevel >= maxRank) return;
         while (currentParent != address(0) && rewardsGiven < maxOverRide && levelsTraversed < maxIteration) {
-            AffiliateData storage parent = affiliates[currentParent];
+            AffiliateData memory parent = affiliates[currentParent];
             WalletData storage wallet = wallets[currentParent];
-            PassiveData storage passive = passives[currentParent];
-            (uint8 level, uint256 highestCap) = _getVaultMaxCap(_user);
+            
+            (uint8 level, uint256 lowestCap) = _getVaultMinCap(currentParent, reward);
+            VaultData storage vault = vaults[currentParent][level];
 
-            if (currentLevel < parent.level && highestCap >= reward) {
+            if (currentLevel < parent.level && lowestCap >= reward) {
                 wallet.balance += reward;
-                wallet.capping -= reward;
                 wallet.totalIncome += reward;
                 totalRewardsDistributed += reward;
                 rewardsGiven++;
                 currentLevel = parent.level;
-
-                vaults[currentParent][level].cap -= reward;
-
+                vault.cap -= reward;
                 emit Rewards("OverRideRewards", _user, currentParent, reward);
             }
             currentParent = parent.parent;
@@ -670,48 +649,17 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         }
     }
 
-    function _calculatePassiveReward(address _user)
+    function _calculatePassiveReward(address _user, uint8 _level)
     private view returns (uint256) {
-        PassiveData memory passive = passives[_user];
-        if (passive.lastDeposit == 0) return 0;
-        uint256 passivePct = _calculatePassivePct(_user);
-        uint256 maturedDays = (block.timestamp - passive.coolDown) / SECONDS_IN_A_DAY;
-        uint256 availableEquity = _calculateAvailableEquity(affiliates[_user].level, wallets[_user].totalIncome);
-        return (maturedDays * availableEquity * passivePct) / BASIS_POINTS;
+        VaultData memory vault = vaults[_user][_level];
+        if( vault.coolDown==0 || vault.amount==0 || vault.cap==0 ) return 0;
+        uint256 maturedDays = (block.timestamp - vault.coolDown) / SECONDS_IN_A_DAY;
+        uint256 passiveValue = (maturedDays * vault.amount * rewardsPassivePct) / BASIS_POINTS;
+        return passiveValue > vault.cap ? vault.cap : passiveValue;
     }
-
-    function _calculatePassivePct(address _user)
-    private view returns (uint256) {
-        PassiveData memory passive = passives[_user];
-        if (passive.lastDeposit == 0 || passive.value == 0) return 0;
-        if (passive.activeIncome == 0) return rewardsPassiveMin;
-        uint256 activePct = (passive.activeIncome * 1000) / passive.value;
-        uint256 minPct = rewardsPassiveMin > activePct ? rewardsPassiveMin : activePct;
-        return minPct < rewardsPassiveMax ? minPct : rewardsPassiveMax;
-    }    
-
-    function _calculateAvailableEquity(uint8 currentLevel, uint256 totalIncome)
-    private view returns (uint256) {
-        uint256 availableEquity = 0;
-        uint256 passiveCapping = 0;
-        uint256 levelEquity = 0;
-        for (uint8 level = 0; level < currentLevel && level < maxRank; level++) {
-            levelEquity = entryFee * (2 ** level);
-            passiveCapping += levelEquity * maxCapped;
-            if (totalIncome < passiveCapping ) {
-               availableEquity += levelEquity;
-            }
-        }
-        if (currentLevel >= maxRank && availableEquity == 0) {
-            availableEquity = entryFee * (2 ** maxRank);
-        }
-        return availableEquity;
-    } 
-
+    
     function _validateRegistrationInputs(address _user, address _referrer)
     private view {
-        if (_user == address(0)) revert InvalidAddress();
-        if (_referrer == address(0)) revert InvalidAddress();
         if (affiliates[_user].parent != address(0)) revert WalletExist();
         if (affiliates[_referrer].parent == address(0)) revert WalletNotExist();
         if (affiliates[_referrer].children.length >= maxChildren) revert ReferralLimit();
@@ -736,9 +684,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     internal {
         uint256 currentBalance = usdtToken.balanceOf(address(this));
         if (currentBalance > highestBalance) {
-            highestBalance = currentBalance;
             withdrawalsPaused = false;
-            cooldownEndTime = 0;
+            highestBalance = currentBalance;
+            cooldownEndTime = block.timestamp;
         }
         uint256 threshold = (highestBalance * poolThreshold) / BASIS_POINTS;
         if (currentBalance <= threshold && !withdrawalsPaused) {
@@ -748,76 +696,68 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         if (withdrawalsPaused && block.timestamp >= cooldownEndTime) {
             withdrawalsPaused = false;
             highestBalance = currentBalance;
+            cooldownEndTime = block.timestamp;
         }
     }
 
     function _safeTransfer(address _user, uint256 _amount) internal {
-        WalletData storage wallet = wallets[_user];
-        if (block.timestamp <= wallet.coolDown + maxTimeDelay) {
-            revert CooldownPeriodActive();
+        require(_user != address(0), "Invalid recipient");
+        if (_user != bufferWallet && _user != projectWallet) {
+            if (lastCallBlock[_user] == block.number) {revert InvalidBlock();}
         }
+        if (usdtToken.balanceOf(address(this)) < _amount) revert InsufficientBalance();
+        lastCallBlock[_user] = block.number;
+        lastCallTime[_user] = block.timestamp;
         require(usdtToken.transfer(_user, _amount), "Transfer failed");
-        wallet.coolDown = block.timestamp;
     }
-
-    function _getVaultMaxCap(address _user) private view returns (uint8 level, uint256 highestCap) {
+    
+    function _getVaultMinCap(address _user, uint256 _reward) private view returns (uint8 level, uint256 lowestCap) {
+        bool found = false;
+        
         for (uint8 i = 0; i < 9; i++) {
             VaultData storage v = vaults[_user][i];
-            if (v.amount == 0) continue;
-            if (v.cap > highestCap) {
-                highestCap = v.cap;
+            if (v.amount == 0 || v.cap < _reward) continue;
+            
+            if (!found || v.cap < lowestCap) {
+                lowestCap = v.cap;
                 level = i;
+                found = true;
             }
         }
-    }
-
-function _getVaultMinCap(address _user) private view returns (uint8 level, uint256 minCap) {
-    bool initialized = false;
-
-    for (uint8 i = 0; i < 9; i++) {
-        uint256 cap = vaults[_user][i].cap;
-
-        // Skip empty vaults (optional)
-        if (cap == 0) continue;
-
-        if (!initialized || cap < minCap) {
-            minCap = cap;
-            level = i;
-            initialized = true;
+        
+        // If no vault found that meets criteria, return default values
+        if (!found) {
+            lowestCap = 0;
+            level = 0;
         }
     }
-
-    return (level, minCap);
-}
     // ==================== ADMIN FUNCTIONS ====================
     function updateWalletData(
         address _user,
         uint256 _balance,
-        uint256 _capping,
         uint256 _totalIncome,
         uint256 _coolDown) 
     external onlyOwner {
-        require(wallets[_user].coolDown>0 , "Wallet Not Found");
+        require(affiliates[_user].parent != address(0), "Unregistered user");
         WalletData storage wallet = wallets[_user];
         if( _balance > 0 ) wallet.balance =  _balance;
-        if( _capping > 0 ) wallet.capping =  _capping;
         if( _totalIncome > 0 ) wallet.totalIncome =  _totalIncome;
         if( _coolDown > 0 ) wallet.coolDown =  _coolDown;
     }
 
-    function updatePassiveData(
+    function updateVaultData(
         address _user,
-        uint256 _value,
-        uint256 _activeIncome,
-        uint256 _lastDeposit,
-        uint256 _coolDown)
+        uint8 _level,
+        uint256 _amount,
+        uint256 _coolDown,
+        uint256 _cap)
     external onlyOwner {
+        require(affiliates[_user].parent != address(0), "Unregistered user");
         require(wallets[_user].coolDown>0 , "Wallet Not Found");
-        PassiveData storage passive = passives[_user];
-        if( _value > 0 ) passive.value =  _value;
-        if( _activeIncome > 0 ) passive.activeIncome =  _activeIncome;
-        if( _lastDeposit > 0 ) passive.lastDeposit =  _lastDeposit;
-        if( _coolDown > 0 ) passive.coolDown =  _coolDown;
+        VaultData storage vault = vaults[_user][_level];
+        if( _amount > 0 ) vault.amount =  _amount;
+        if( _coolDown > 0 ) vault.coolDown =  _coolDown;
+        if( _cap >= 0 ) vault.cap =  _cap;
     }
 
     function updateAffiliateData(
@@ -826,6 +766,7 @@ function _getVaultMinCap(address _user) private view returns (uint8 level, uint2
         address _agent,
         uint8 _level)
     external onlyOwner {
+        require(affiliates[_user].parent != address(0), "Unregistered user");
         AffiliateData storage affiliate = affiliates[_user];
         if( _level > 0 ) affiliate.level =  _level;
         if( _parent != address(0) ){
@@ -851,6 +792,7 @@ function _getVaultMinCap(address _user) private view returns (uint8 level, uint2
         uint256 _totalIncome,
         bool _isActive)
     external onlyOwner {
+        require(affiliates[_user].parent != address(0), "Unregistered user");
         AgentData storage agent = agents[_user];
         require(agent.parent != address(0), "Agent does not exist");
 
@@ -859,8 +801,8 @@ function _getVaultMinCap(address _user) private view returns (uint8 level, uint2
             _removedChild(_parent, _user, false);
             agents[_parent].children.push(_user);
         }
-        if(_fees > 0) agent.fees = _fees;
+        if(_fees >= 0) agent.fees = _fees;
         if(_totalIncome > 0) agent.totalIncome = _totalIncome;
         if(_isActive != agent.isActive) agent.isActive = _isActive;
-    }
+    }  
 }
