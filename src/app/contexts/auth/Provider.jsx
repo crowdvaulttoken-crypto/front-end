@@ -1,13 +1,11 @@
 // Import Dependencies
 import { useEffect, useReducer } from "react";
-import isObject from "lodash/isObject";
 import PropTypes from "prop-types";
-import isString from "lodash/isString";
 
 // Local Imports
-//import axios from "utils/axios";
-import { isTokenValid, setSession } from "utils/jwt";
+import { setSession } from "utils/jwt";
 import { AuthContext } from "./context";
+import { ethers } from "ethers";
 
 // ----------------------------------------------------------------------
 
@@ -74,17 +72,16 @@ const reducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  
 
   useEffect(() => {
     const init = async () => {
       try {
-        const authToken = window.localStorage.getItem("authToken");
-
-        if (authToken && isTokenValid(authToken)) {
-          setSession(authToken);
-
-          // const response = await axios.get("/user/profile");
-          // const { user } = response.data;
+        const newProvider =  new ethers.BrowserProvider(window.ethereum);
+        const signer = await newProvider.getSigner();
+        const address = await signer.getAddress();
+        const walletSession = window.localStorage.getItem("walletSession");
+        if( walletSession==address ){
           const user = {
             user: {
               id: "uid-2",
@@ -92,7 +89,7 @@ export function AuthProvider({ children }) {
               firstName: "Robert",
               lastName: "Safi"
             }
-          };  
+          };
           dispatch({
             type: "INITIALIZE",
             payload: {
@@ -100,7 +97,7 @@ export function AuthProvider({ children }) {
               user,
             },
           });
-        } else {
+        }else{
           dispatch({
             type: "INITIALIZE",
             payload: {
@@ -128,39 +125,32 @@ export function AuthProvider({ children }) {
     dispatch({
       type: "LOGIN_REQUEST",
     });
-    console.log(username +''+ password)
+    console.log(username +'-'+ password)
     try {
-      // const response = await axios.post("/login", {
-      //   username,
-      //   password,
-      // });
-
-      var date = new Date();
-      const response = {
-        authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJEYW5nYWwiLCJpYXQiOjE3NTk1NDIzMDAsImV4cCI6MTc2MDE0NzEwMCwiZW1haWwiOiIifQ.EX49V0hvpF3B_lXqX4sP-oiTFKK_SKh34yhexlHQ95U",
-        exp: date.setDate(date.getDate() + 2),
-        user: {
-          id: "uid-2",
-          username: "rsafi",
-          firstName: "Robert",
-          lastName: "Safi"
-        }
-      };      
-
-      const { authToken, user } = response;
-
-      if (!isString(authToken) && !isObject(user)) {
-        throw new Error("Response is not vallid");
+      const newProvider =  new ethers.BrowserProvider(window.ethereum);
+      const accounts = await newProvider.send("eth_requestAccounts", []); 
+      const signer = await newProvider.getSigner();
+      const address = await signer.getAddress();
+      if( address.toUpperCase==accounts[0].toUpperCase ){
+        localStorage.setItem("walletSession", address);
+        const user = {
+          user: {
+            id: "uid-2",
+            username: "rsafi",
+            firstName: "Robert",
+            lastName: "Safi"
+          }
+        };
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: {
+            user,
+          },
+        });
       }
-
-      setSession(authToken);
-
-      dispatch({
-        type: "LOGIN_SUCCESS",
-        payload: {
-          user,
-        },
-      });
+      else{
+        throw new Error("Wallet Not Connected");
+      }
     } catch (err) {
       dispatch({
         type: "LOGIN_ERROR",

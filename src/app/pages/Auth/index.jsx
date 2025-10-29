@@ -131,7 +131,6 @@ export default function SignIn() {
           </div>
         </div>
       </main>
-
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -188,6 +187,5 @@ export default function SignIn() {
         </Dialog>
       </Transition>
     </Page>
-    
   );
 }

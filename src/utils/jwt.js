@@ -37,6 +37,7 @@ const setSession = (authToken) => {
   } else {
     // Remove token from local storage and delete authorization header from axios
     localStorage.removeItem("authToken");
+    localStorage.removeItem("walletSession");
     delete axios.defaults.headers.common.Authorization;
   }
 };

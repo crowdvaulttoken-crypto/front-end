@@ -52,14 +52,14 @@ export function useSmartContract() {
 
         const accounts = await newProvider.send("eth_requestAccounts", []); 
         setAccount(accounts[0]);
-        const countAccounts = await newProvider.listAccounts();
-        setConnected(Array.isArray(countAccounts) ? countAccounts.length > 0 : false);
 
         const signer = await newProvider.getSigner();
         setSigner(signer);
         
         const address = await signer.getAddress();
         setAddress(address);
+
+        setConnected(address == accounts[0]);
 
         const bnbBalance = await newProvider.getBalance(address);
         setBnbBalance(ethers.formatEther(bnbBalance));

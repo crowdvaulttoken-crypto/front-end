@@ -26,16 +26,15 @@ export function Home() {
     CrowdVaultContract,
     activateVIP
   } = useSmartContract();  
-  const defaultCd = Math.floor(Date.now() / 1000);
-  const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":defaultCd});
-  const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":defaultCd});
-  const [vip2, setVip2] = useState({"amount":100,"cap":300,"coolDown":defaultCd});
-  const [vip3, setVip3] = useState({"amount":200,"cap":600,"coolDown":defaultCd});
-  const [vip4, setVip4] = useState({"amount":400,"cap":1200,"coolDown":defaultCd});
-  const [vip5, setVip5] = useState({"amount":800,"cap":2400,"coolDown":defaultCd});
-  const [vip6, setVip6] = useState({"amount":1600,"cap":4800,"coolDown":defaultCd});
-  const [vip7, setVip7] = useState({"amount":3200,"cap":9600,"coolDown":defaultCd});
-  const [vip8, setVip8] = useState({"amount":6400,"cap":19200,"coolDown":defaultCd});
+  const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":0});
+  const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":0});
+  const [vip2, setVip2] = useState({"amount":100,"cap":300,"coolDown":0});
+  const [vip3, setVip3] = useState({"amount":200,"cap":600,"coolDown":0});
+  const [vip4, setVip4] = useState({"amount":400,"cap":1200,"coolDown":0});
+  const [vip5, setVip5] = useState({"amount":800,"cap":2400,"coolDown":0});
+  const [vip6, setVip6] = useState({"amount":1600,"cap":4800,"coolDown":0});
+  const [vip7, setVip7] = useState({"amount":3200,"cap":9600,"coolDown":0});
+  const [vip8, setVip8] = useState({"amount":6400,"cap":19200,"coolDown":0});
   const [loaded, setLoaded] = useState(false)
 
   const [v0Percent, setV0Percent] = useState(0);
@@ -80,14 +79,8 @@ export function Home() {
         setLoaded(true);
         const now = Math.floor(Date.now() / 1000);
 
-        const vx = await CrowdVaultContract.vaults(address,0);
-        const [v0amount, v0cap, v0cd] = await CrowdVaultContract.vaults(address,0);
-
-        console.log(`amount: ${v0amount}`);
-        console.log(`cap: ${v0cap}`);
-        console.log(`cd: ${v0cd}`);
-        console.log(`vx1: ${vx[1]}`);
-        console.log(`vx2: ${vx[2]}`);
+        // const vx = await CrowdVaultContract.vaults(address,0);
+        // const [v0amount, v0cap, v0cd] = await CrowdVaultContract.vaults(address,0);
         const v0 = await CrowdVaultContract.getVaultData(address,0);
         setVip0(v0);
         setV0CoolDown(v0.coolDown);
