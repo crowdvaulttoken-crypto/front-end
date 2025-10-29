@@ -38,7 +38,7 @@ export default function Tree() {
             const [parent, agent, level] = await CrowdVaultContract.getAffiliateData(child);
             return {
               address: child,
-              level: parseInt(level) < 1?0:parseInt(level)-1,
+              level: parseInt(level),
               parent,
               agent,
             };

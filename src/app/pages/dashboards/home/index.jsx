@@ -129,7 +129,7 @@ export function Home() {
         setV7Percent( ((((parseInt(v7.amount)*3) - parseInt(v7.cap) ) / parseInt(v7.amount)*3)*10).toFixed(1) );
         setV7Collect( (parseInt((now - parseInt(v7.coolDown)) / 86400)) * parseInt(v7.amount) * 0.02 );
 
-        const v8 = await CrowdVaultContract.getVaultData(address,7);
+        const v8 = await CrowdVaultContract.getVaultData(address,8);
         setVip8(v8);
         setV8CoolDown(v8.coolDown);
         setV8Percent( ((((parseInt(v8.amount)*3) - parseInt(v8.cap) ) / parseInt(v8.amount)*3)*10).toFixed(1) );
