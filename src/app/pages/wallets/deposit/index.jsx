@@ -12,12 +12,12 @@ import { useDisclosure } from "hooks";
 export default function Home() {
   const navigate = useNavigate();
   const {
+    usdtBalance,
     walletData,
-    withdraw
+    deposit
   } =  useSmartContract();  
 
-  const [walletBalance,setWalletBalance] = useState(0);
-  const [withdrawAmount,setWithdrawAmount] = useState(0);
+  const [depositAmount,setDepositAmount] = useState(0);
   const [isOpen, { open, close }] = useDisclosure(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -47,16 +47,12 @@ export default function Home() {
     var hash = false;
     var blockTime = Math.floor(Date.now() / 1000);
     if( ( parseInt(walletData.coolDown)+86400) > blockTime ){
-      setCustomError(`24 hrs withdrawal cooldown!`);
+      //setCustomError(`24 hrs withdrawal cooldown!`);
     }
-    else if( withdrawAmount < 5 || withdrawAmount > 100 ){
-      setCustomError(`Widrawal Range Error ${withdrawAmount}`);
-      
-    }
-    else if(walletBalance < withdrawAmount ){
-      setCustomError(`Not enough rewards balance`);
+    if( usdtBalance < depositAmount ){
+      setCustomError(`No enough USDT Balance ${depositAmount}`);
     }else{
-      hash = await withdraw(withdrawAmount);
+      hash = await deposit(depositAmount);
       if( !hash ){ setCustomError(`Transfer Failed`); }
     }
     if( hash==true ){
@@ -73,8 +69,7 @@ export default function Home() {
 
   const onSubmit = (data) => {
     console.log(data);
-    setWalletBalance(parseFloat(walletData.balance))
-    setWithdrawAmount(parseFloat(data.requestAmount))
+    setDepositAmount(parseInt(data.requestAmount))
     setSuccess(false);
     setError(false);
     open();
@@ -106,7 +101,7 @@ export default function Home() {
           </h2>
         </div>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <label htmlFor="requestAmount">Enter the minimum amount {minDeposit} USDT</label>
+          <label htmlFor="requestAmount">Enter the minimum amount {minDeposit} USDT {usdtBalance}</label>
           <div className="mt-1.5 flex -space-x-px ">
             <Input
               placeholder="Enter amount"

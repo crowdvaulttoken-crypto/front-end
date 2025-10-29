@@ -1,6 +1,6 @@
-import { HomeIcon,UserGroupIcon } from '@heroicons/react/24/outline';
 import DashboardsIcon from 'assets/dualicons/dashboards.svg?react'
 import { NAV_TYPE_ROOT, NAV_TYPE_ITEM } from 'constants/app.constant'
+import { HomeIcon,IdentificationIcon,UserGroupIcon } from "@heroicons/react/24/outline";
 
 const ROOT_DASHBOARDS = '/dashboards'
 
@@ -29,6 +29,14 @@ export const dashboards = {
             title: 'tree',
             transKey: 'Tree',
             Icon: UserGroupIcon,
+        },
+        {
+            id: 'dashboards.activate',
+            path: path(ROOT_DASHBOARDS, '/activate'),
+            type: NAV_TYPE_ITEM,
+            title: 'Register',
+            transKey: 'Register',
+            Icon: IdentificationIcon,
         },
     ]
 }

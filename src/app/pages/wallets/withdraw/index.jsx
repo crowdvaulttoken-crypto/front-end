@@ -6,7 +6,7 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { useForm } from "react-hook-form";
 // Local Imports
 import { ConfirmModal } from "components/shared/ConfirmModal";
-import { Input, Button,InputErrorMsg } from "components/ui";
+import { Input, Button, InputErrorMsg } from "components/ui";
 import { useDisclosure } from "hooks";
 
 export default function Home() {

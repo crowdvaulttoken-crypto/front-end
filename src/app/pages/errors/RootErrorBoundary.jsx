@@ -21,8 +21,8 @@ function RootErrorBoundary() {
     const Component = Loadable(app[error.status]);
     return <Component />;
   }
-
-  return <div>Something went wrong</div>;
+  const Component = Loadable(app[429]);
+  return <Component />;
 }
 
 export default RootErrorBoundary;

@@ -1,304 +1,235 @@
 import { Page } from "components/shared/Page";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useState, useEffect } from 'react';
 import { useSmartContract } from "../../../../hooks/useSmartContract";
-
-import { MinusIcon,PlusIcon } from "@heroicons/react/24/solid";
-import { usePriceFeedBybit } from "../../../../hooks/usePriceFeedBybit";
-import { usePriceFeedKraken } from "../../../../hooks/usePriceFeedKraken";
-import { usePriceFeedOkx } from "../../../../hooks/usePriceFeedOkx";
-import { usePriceFeedBitget } from "../../../../hooks/usePriceFeedBitget";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+// Local Imports
+import { ConfirmModal } from "components/shared/ConfirmModal";
+import { useDisclosure } from "hooks";
 import { Button,Circlebar } from "components/ui";
 import {
-  RocketLaunchIcon,
-  ClockIcon,
-  BoltIcon,
   ChartBarIcon,
   CircleStackIcon,
   CurrencyDollarIcon,
-  ChevronDoubleUpIcon
+  ChevronDoubleUpIcon,
+  CubeTransparentIcon
 } from "@heroicons/react/24/outline";
 
-function getMinMaxPrice(prices) {
-  // Filter out invalid or zero prices
-  const validPrices = prices.filter(p => typeof p.price === 'number' && p.price > 0);
-
-  if (validPrices.length === 0) {
-    return { min: 0, max: 0, minExchange: '', maxExchange: '' };
-  }
-
-  // Find the lowest and highest prices with their exchanges
-  const minPriceObj = validPrices.reduce((min, curr) => curr.price < min.price ? curr : min);
-  const maxPriceObj = validPrices.reduce((max, curr) => curr.price > max.price ? curr : max);
-
-  return {
-    min: minPriceObj.price,
-    max: maxPriceObj.price,
-    minExchange: minPriceObj.exchange,
-    maxExchange: maxPriceObj.exchange
-  };
-}
-
-export default function Home() {
+export function Home() {
+  const navigate = useNavigate();
   const {
-    passiveData,bnbBalance,usdtBalance,walletData,affiliateData,availableEquity,passivePercent
-  } = useSmartContract();
-  const { bybitFeed, isConnected } = usePriceFeedBybit();
-  const { krakenFeed } = usePriceFeedKraken();
-  const { okxFeed } = usePriceFeedOkx();
-  const { bitgetFeed } = usePriceFeedBitget();
+    address,
+    bnbBalance,
+    usdtBalance,
+    walletData,
+    affiliateData,
+    CrowdVaultContract,
+    activateVIP
+  } = useSmartContract();  
+  const defaultCd = Math.floor(Date.now() / 1000);
+  const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":defaultCd});
+  const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":defaultCd});
+  const [vip2, setVip2] = useState({"amount":100,"cap":300,"coolDown":defaultCd});
+  const [vip3, setVip3] = useState({"amount":200,"cap":600,"coolDown":defaultCd});
+  const [vip4, setVip4] = useState({"amount":400,"cap":1200,"coolDown":defaultCd});
+  const [vip5, setVip5] = useState({"amount":800,"cap":2400,"coolDown":defaultCd});
+  const [vip6, setVip6] = useState({"amount":1600,"cap":4800,"coolDown":defaultCd});
+  const [vip7, setVip7] = useState({"amount":3200,"cap":9600,"coolDown":defaultCd});
+  const [vip8, setVip8] = useState({"amount":6400,"cap":19200,"coolDown":defaultCd});
+  const [loaded, setLoaded] = useState(false)
 
-  const okxIcon = okxFeed.color=='#95e4d2'?(<PlusIcon className="size-7"  />):(okxFeed.color=='#ff6f4a'?(<MinusIcon className="size-7"/>):'');
-  const bybitIcon = bybitFeed.color=='#95e4d2'?(<PlusIcon className="size-7"  />):(bybitFeed.color=='#ff6f4a'?(<MinusIcon className="size-7"/>):'');
-  const krakenIcon = krakenFeed.color=='#95e4d2'?(<PlusIcon className="size-7"  />):(krakenFeed.color=='#ff6f4a'?(<MinusIcon className="size-7"/>):'');
-  const bitgetIcon = bitgetFeed.color=='#95e4d2'?(<PlusIcon className="size-7"  />):(bitgetFeed.color=='#ff6f4a'?(<MinusIcon className="size-7"/>):'');
+  const [v0Percent, setV0Percent] = useState(0);
+  const [v0CoolDown, setV0CoolDown] = useState(0);
+  const [v0Collect, setV0Collect] = useState(0);
 
-  const [lowestPrice, setLowestPrice] = useState(1);
-  const [highestPrice, setHighestPrice] = useState(0);
-  const [lowestExchange, setLowestExchange] = useState('');
-  const [highestExchange, setHighestExchange] = useState('');
+  const [v1Percent, setV1Percent] = useState(0);
+  const [v1CoolDown, setV1CoolDown] = useState(0);
+  const [v1Collect, setV1Collect] = useState(0);
 
-  function calculateArbitrageProfit(capital, buyPrice, sellPrice) {
-    // Calculate how much BNB we can buy with our capital
-    const btcAmount = capital / buyPrice;
-    
-    // Calculate how much USDT we get from selling that BNB
-    const sellAmount = btcAmount * sellPrice;
-    
-    // Calculate profit
-    const profit = sellAmount - capital;
-    
-    return {
-        buyExchange: buyPrice < sellPrice ? 'Bybit' : 'Kraken',
-        sellExchange: buyPrice < sellPrice ? 'Kraken' : 'Bybit',
-        btcAmount: btcAmount,
-        sellAmount: sellAmount,
-        profit: profit,
-        profitPercentage: (profit / capital) * 100
-    };
-  }
+  const [v2Percent, setV2Percent] = useState(0);
+  const [v2CoolDown, setV2CoolDown] = useState(0);
+  const [v2Collect, setV2Collect] = useState(0);
+
+  const [v3Percent, setV3Percent] = useState(0);
+  const [v3CoolDown, setV3CoolDown] = useState(0);
+  const [v3Collect, setV3Collect] = useState(0);
+
+  const [v4Percent, setV4Percent] = useState(0);
+  const [v4CoolDown, setV4CoolDown] = useState(0);
+  const [v4Collect, setV4Collect] = useState(0);
+
+  const [v5Percent, setV5Percent] = useState(0);
+  const [v5CoolDown, setV5CoolDown] = useState(0);
+  const [v5Collect, setV5Collect] = useState(0);
+
+  const [v6Percent, setV6Percent] = useState(0);
+  const [v6CoolDown, setV6CoolDown] = useState(0);
+  const [v6Collect, setV6Collect] = useState(0);
+
+  const [v7Percent, setV7Percent] = useState(0);
+  const [v7CoolDown, setV7CoolDown] = useState(0);
+  const [v7Collect, setV7Collect] = useState(0);
+
+  const [v8Percent, setV8Percent] = useState(0);
+  const [v8CoolDown, setV8CoolDown] = useState(0);
+  const [v8Collect, setV8Collect] = useState(0);
 
   useEffect(() => {
-    const { min, max, minExchange, maxExchange } = getMinMaxPrice([
-      { price: parseFloat(bybitFeed.price), exchange: 'Bybit' },
-      { price: parseFloat(okxFeed.price), exchange: 'OKX' },
-      { price: parseFloat(krakenFeed.price), exchange: 'Kraken' },
-      { price: parseFloat(bitgetFeed.price), exchange: 'Bitget' }
-    ]);
+    const loadVip = async () => {
+      if ( address!="0x0000000000000000000000000000000000000000" && CrowdVaultContract ){
+        setLoaded(true);
+        const now = Math.floor(Date.now() / 1000);
 
-    setLowestPrice(min);
-    setHighestPrice(max);
-    setLowestExchange(minExchange);
-    setHighestExchange(maxExchange);
-  }, [
-    bybitFeed.price,
-    okxFeed.price,
-    krakenFeed.price,
-    bitgetFeed.price
-  ]);
+        const vx = await CrowdVaultContract.vaults(address,0);
+        const [v0amount, v0cap, v0cd] = await CrowdVaultContract.vaults(address,0);
 
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const currentCapital = availableEquity>0 ?  parseInt(availableEquity):10 ;
-  //const currentMinCollection = parseFloat(currentCapital*passivePercent);
-  const currentRewards = ((currentTimestamp - parseInt(passiveData.coolDown)) / 86400) * parseFloat(currentCapital*passivePercent)  ; 
+        console.log(`amount: ${v0amount}`);
+        console.log(`cap: ${v0cap}`);
+        console.log(`cd: ${v0cd}`);
+        console.log(`vx1: ${vx[1]}`);
+        console.log(`vx2: ${vx[2]}`);
+        const v0 = await CrowdVaultContract.getVaultData(address,0);
+        setVip0(v0);
+        setV0CoolDown(v0.coolDown);
+        setV0Percent( ((((parseInt(v0.amount)*3) - parseInt(v0.cap) ) / parseInt(v0.amount)*3)*10).toFixed(1) );
+        setV0Collect( (parseInt((now - parseInt(v0.coolDown)) / 86400)) * parseInt(v0.amount) * 0.02 );
 
-  // Your specific example
-  const result = calculateArbitrageProfit(currentCapital, lowestPrice, highestPrice);
+        const v1 = await CrowdVaultContract.getVaultData(address,1);
+        setVip1(v1);
+        setV1CoolDown(v1.coolDown);
+        setV1Percent( ((((parseInt(v1.amount)*3) - parseInt(v1.cap) ) / parseInt(v1.amount)*3)*10).toFixed(1) );
+        setV1Collect( (parseInt((now - parseInt(v1.coolDown)) / 86400)) * parseInt(v1.amount) * 0.02 );
 
-  const now = Math.floor(Date.now() / 1000);
-  const withdrawcooldown =  ( parseInt(now)- parseInt(walletData.coolDown) ) > 86400 ? true:false;
-  const collectCooldown = ( parseInt(now)- parseInt(passiveData.coolDown) ) > 86400 ? true:false;
+        const v2 = await CrowdVaultContract.getVaultData(address,2);
+        setVip2(v2);
+        setV2CoolDown(v2.coolDown);
+        setV2Percent( ((((parseInt(v2.amount)*3) - parseInt(v2.cap) ) / parseInt(v2.amount)*3)*10).toFixed(1) );
+        setV2Collect( (parseInt((now - parseInt(v2.coolDown)) / 86400)) * parseInt(v2.amount) * 0.02 );        
 
-  return (
-    <Page title="Dashboard">
-      <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
-        <div className="min-w-0 mb-10">
-          <div className="flex items-center justify-between py-3 px-5 ">
-            <div className="flex flex-col">
-              <Link to="/dashboards/activate" >
-                <Button
-                  color="primary"
-                  variant="soft"
-                  isGlow="true"
-                  className="space-x-1 rounded-full px-3 "
-                >
-                  <RocketLaunchIcon className="size-5 lg:size-10 stroke-2" />
-                  <span className="text-xs-plus lg:text-lg">ACTIVATE</span>
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-col">
-              <Link to="/wallets/collect" >
-                <Button
-                  color="primary"
-                  variant="soft"
-                  isGlow={collectCooldown}
-                  className="space-x-1 rounded-full px-3"
-                >
-                  <ClockIcon className="size-5 lg:size-10 stroke-2" />
-                  <span className="text-xs-plus lg:text-lg">COLLECT</span>
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-col">
-              <Link to="/wallets/withdraw" >
-                <Button
-                  color="primary"
-                  variant="soft"
-                  isGlow={withdrawcooldown}
-                  className="space-x-1 rounded-full px-3"
-                >
-                  <BoltIcon className="size-5 lg:size-10 stroke-2" />
-                  <span className="text-xs-plus lg:text-lg">WITHDRAW</span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+        const v3 = await CrowdVaultContract.getVaultData(address,3);
+        setVip3(v3);
+        setV3CoolDown(v3.coolDown);
+        setV3Percent( ((((parseInt(v3.amount)*3) - parseInt(v3.cap) ) / parseInt(v3.amount)*3)*10).toFixed(1) );
+        setV3Collect( (parseInt((now - parseInt(v3.coolDown)) / 86400)) * parseInt(v3.amount) * 0.02 );
+        
+        const v4 = await CrowdVaultContract.getVaultData(address,4);
+        setVip4(v4);
+        setV4CoolDown(v4.coolDown);
+        setV4Percent( ((((parseInt(v4.amount)*3) - parseInt(v4.cap) ) / parseInt(v4.amount)*3)*10).toFixed(1) );
+        setV4Collect( (parseInt((now - parseInt(v4.coolDown)) / 86400)) * parseInt(v4.amount) * 0.02 );
+        
+        const v5 = await CrowdVaultContract.getVaultData(address,5);
+        setVip5(v5);
+        setV5CoolDown(v5.coolDown);
+        setV5Percent( ((((parseInt(v5.amount)*3) - parseInt(v5.cap) ) / parseInt(v5.amount)*3)*10).toFixed(1) );
+        setV5Collect( (parseInt((now - parseInt(v5.coolDown)) / 86400)) * parseInt(v5.amount) * 0.02 );
 
-          <div className="mt-5 grid grid-cols-1 gap-2 px-4 sm:grid-cols-2 md:grid-cols-4 sm:px-5">
-            <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-              <p className="text-xs uppercase text-white/100">BNB</p>
-              <div className="flex items-end justify-between space-x-2 ">
-                <p className="mt-4 text-lg font-medium text-white/50">{parseFloat(bnbBalance).toFixed(5)}</p>
-              </div>
-            </div>
-            <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-              <p className="text-xs uppercase text-white/100">USDT</p>
-              <div className="flex items-end justify-between space-x-2 ">
-                <p className="mt-4 text-lg font-medium text-white/50">{parseFloat(usdtBalance).toFixed(3)}</p>
-              </div>
-            </div>
-            <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-              <p className="text-xs uppercase text-white/100">WNTrades</p>
-              <div className="flex items-end justify-between space-x-2 ">
-                <p className="mt-4 text-lg font-medium text-white/50">{parseFloat(parseInt(walletData.balance)).toFixed(3)}</p>
-              </div>
-            </div>
-            <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-              <p className="text-xs uppercase text-white/100">Total Rewards</p>
-              <div className="flex items-end justify-between space-x-2 ">
-                <p className="mt-4 text-lg font-medium text-white/50">{parseFloat(parseInt(walletData.totalIncome)).toFixed(3)}</p>
-              </div>
-            </div>
-          </div>
+        const v6 = await CrowdVaultContract.getVaultData(address,6);
+        setVip6(v6);
+        setV6CoolDown(v6.coolDown);
+        setV6Percent( ((((parseInt(v6.amount)*3) - parseInt(v6.cap) ) / parseInt(v6.amount)*3)*10).toFixed(1) );
+        setV6Collect( (parseInt((now - parseInt(v6.coolDown)) / 86400)) * parseInt(v6.amount) * 0.02 );
 
-          <div className="mt-5 grid grid-cols-1 gap-2 px-4 not-[]:sm:grid-cols-1 sm:px-5">
-            <div className="rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-                <div className="flex items-center justify-between py-3">
-                    <h2 className="text-sm-plus uppercase font-medium tracking-wide text-white/100">ARBITRAGE SCANNER RANK {affiliateData.level<10?affiliateData.level:10}</h2>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:gap-6">
-                    <div>
-                        <div className="mt-3 text-2xl font-semibold text-white/100">${parseFloat(currentCapital).toFixed(0)}</div>
-                        <p className="mt-2 text-xs-plus text-white/80">PROFIT: {parseFloat(result.profit).toFixed(3)} USDT </p>
-                        <p className="mt-2 text-xs-plus text-white/80">PERCENT: {parseFloat(result.profitPercentage).toFixed(3)}%</p>
-                        <p className="mt-2 text-xs-plus text-white/80">PNL: {currentRewards.toFixed(4)}</p>
-                    </div>                      
-                    <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
-                        <div>
-                            <p className="text-white/100">{lowestExchange}</p>
-                            <div className="mt-1 flex items-center gap-2 text-white/50">
-                                <div className="flex size-7 items-center justify-center rounded-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3"></path></svg></div>
-                                <p className="text-base font-medium">${parseFloat(lowestPrice).toFixed(2)}</p>
-                            </div>
-                            <button className="btn-base mt-3 w-full rounded-lg border border-success/75 bg-success/75 px-5 py-2 text-white hover:bg-success/50 focus:bg-success/50 active:bg-success/50" type="button">BUY</button>
-                        </div>
-                        <div>
-                            <p className="text-white/100">{highestExchange}</p>
-                            <div className="mt-1 flex items-center gap-2 text-white/50">
-                                <div className="flex size-7 items-center justify-center rounded-full bg-black/20"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18"></path></svg></div>
-                                <p className="text-base font-medium ">${parseFloat(highestPrice).toFixed(2)}</p>
-                            </div>
-                            <button className="btn-base mt-3 w-full rounded-lg border border-error/75 bg-error/75 px-5 py-2 text-white hover:bg-error/50 focus:bg-error/50 active:bg-error/25" type="button">SELL</button>
-                        </div>
-                    </div>
-                </div>
-            </div>   
-          </div>
-          
-          <div className="mt-5 grid grid-cols-1 gap-2 px-4 sm:grid-cols-2 sm:px-5">
-              <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-                <p className="uppercase font-small text-white/100">Okx BNB Live Price</p>
-                <div className="flex items-end justify-between space-x-2 ">
-                  <div className="font-medium text-gray-900 dark:text-dark-100 ">
-                    {isConnected && okxFeed.price>0 ? (
-                      <div style= {{color: okxFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}} >${parseFloat(okxFeed.price).toFixed(2)}</div>
-                    ) : (
-                      <div>Connecting to price feed...</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mask is-hexagon-2 absolute right-0 top-0 -m-3 size-16 bg-black/50 text-center p-5">
-                  <span className="text-3xl" style={{color: okxFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}}>
-                    {okxIcon}
-                  </span> 
-                </div>
-              </div>
-              <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-                <p className="uppercase font-medium text-white/100">Bybit BNB Live Price</p>
-                <div className="flex items-end justify-between space-x-2 ">
-                  <div className="font-medium text-gray-900 dark:text-dark-100 ">
-                    {isConnected && bybitFeed.price>0 ? (
-                      <div style= {{color: bybitFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}} >${parseFloat(bybitFeed.price).toFixed(2)}</div>
-                    ) : (
-                      <div>Connecting to price feed...</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mask is-hexagon-2 absolute right-0 top-0 -m-3 size-16 bg-black/50 text-center p-5">
-                  <span className="text-3xl" style={{color: bybitFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}}>
-                    {bybitIcon}
-                  </span>
-                </div>
-              </div>
-              <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-                <p className="uppercase font-medium text-white/100">Kraken BNB Live Price</p>
-                <div className="flex items-end justify-between space-x-2 ">
-                  <div className="font-medium text-gray-900 dark:text-dark-100 ">
-                    {isConnected && krakenFeed.price>0 ? (
-                      <div style= {{color: krakenFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}} >${parseFloat(krakenFeed.price).toFixed(2)}</div>
-                    ) : (
-                      <div>Connecting to price feed...</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mask is-hexagon-2 absolute right-0 top-0 -m-3 size-16 bg-black/50 text-center p-5">
-                  <span className="text-3xl" style={{color: krakenFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}}>
-                    {krakenIcon}
-                  </span>
-                </div>
-              </div>
-              <div className="relative flex flex-col overflow-hidden rounded-lg bg-linear-to-br from-primary-500 to-primary-600 p-3.5">
-                <p className="uppercase font-medium text-white/100">BitGet BNB Live Price</p>
-                <div className="flex items-end justify-between space-x-2 ">
-                  <div className="font-medium text-gray-900 dark:text-dark-100 ">
-                    {isConnected && bitgetFeed.price>0 ? (
-                      <div style= {{color: bitgetFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}} >${parseFloat(bitgetFeed.price).toFixed(2)}</div>
-                    ) : (
-                      <div>Connecting to price feed...</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mask is-hexagon-2 absolute right-0 top-0 -m-3 size-16 bg-black/50 text-center p-5">
-                  <span className="text-3xl" style={{color: bitgetFeed.color,fontWeight: 'bold', fontSize: '1rem', transition: 'color 0.3s ease'}}>
-                    {bitgetIcon}
-                  </span>
-                </div>
-              </div>
-          </div>
-        </div>
-      </div>
-    </Page>
-  );
-}
+        const v7 = await CrowdVaultContract.getVaultData(address,7);
+        setVip7(v7);
+        setV7CoolDown(v7.coolDown);
+        setV7Percent( ((((parseInt(v7.amount)*3) - parseInt(v7.cap) ) / parseInt(v7.amount)*3)*10).toFixed(1) );
+        setV7Collect( (parseInt((now - parseInt(v7.coolDown)) / 86400)) * parseInt(v7.amount) * 0.02 );
 
+        const v8 = await CrowdVaultContract.getVaultData(address,7);
+        setVip8(v8);
+        setV8CoolDown(v8.coolDown);
+        setV8Percent( ((((parseInt(v8.amount)*3) - parseInt(v8.cap) ) / parseInt(v8.amount)*3)*10).toFixed(1) );
+        setV8Collect( (parseInt((now - parseInt(v8.coolDown)) / 86400)) * parseInt(v8.amount) * 0.02 );
+      }
+    }
+    if( loaded==false ){
+      loadVip();
+    }
+    return () => {
+      
+    }
+  }, [address,CrowdVaultContract,loaded]);
 
-export function Home2() {
+  const [isOpen, { open, close }] = useDisclosure(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const [action, setAction] = useState(false);  
+  const [customTitle, setCustomTitle] = useState(false);  
+  const [customError, setCustomError] = useState('');  
+  const state = error ? "error" : success ? "success" : "pending";
+
+  const messages = {
+    pending: {
+      Icon: ExclamationTriangleIcon,
+      title: customTitle!=false?customTitle:'Please Confirm',
+      description: "Click ok to confirm request.",
+      actionText: "Ok",
+    },
+    success: {
+      title: customTitle!=false?customTitle:'Sucess',
+      description: "Thank You.",
+    },
+    error: {
+      description: `${customError}`,
+    },
+  };
+
+  const onOk = async () => {
+    setConfirmLoading(true);
+    var hash = false;
+    if( action == 'activate' ){
+      hash = await activateVIP();
+      setCustomTitle(`Activate Rewards`);
+      if( !hash ){ setCustomError(`Transfer Failed`); }
+    }
+    if( action == 'collect' ){
+      setCustomTitle(`Collect Rewards`);
+      setCustomError(`No Ready to collect Failed`);
+    }
+
+    if( hash==true ){
+      setConfirmLoading(false);
+      setSuccess(true);
+      setError(false);
+      navigate("/dashboards");
+    }
+    else {
+      setConfirmLoading(false);
+      setError(true);
+    }
+  };  
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      if(parseInt( vip0.coolDown) > 0 ) { setV0CoolDown(now - parseInt(vip0.coolDown)); } else {  setV0CoolDown(0); }
+      if(parseInt( vip1.coolDown) > 0 ) { setV1CoolDown(now - parseInt(vip1.coolDown)); } else {  setV1CoolDown(0); }
+      if(parseInt( vip2.coolDown) > 0 ) { setV2CoolDown(now - parseInt(vip2.coolDown)); } else {  setV2CoolDown(0); }
+      if(parseInt( vip3.coolDown) > 0 ) { setV3CoolDown(now - parseInt(vip3.coolDown)); } else {  setV3CoolDown(0); }
+      if(parseInt( vip4.coolDown) > 0 ) { setV4CoolDown(now - parseInt(vip4.coolDown)); } else {  setV4CoolDown(0); }
+      if(parseInt( vip5.coolDown) > 0 ) { setV5CoolDown(now - parseInt(vip5.coolDown)); } else {  setV5CoolDown(0); }
+      if(parseInt( vip6.coolDown) > 0 ) { setV6CoolDown(now - parseInt(vip6.coolDown)); } else {  setV6CoolDown(0); }
+      if(parseInt( vip7.coolDown) > 0 ) { setV7CoolDown(now - parseInt(vip7.coolDown)); } else {  setV7CoolDown(0); }
+      if(parseInt( vip8.coolDown) > 0 ) { setV8CoolDown(now - parseInt(vip8.coolDown)); } else {  setV8CoolDown(0); }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [vip0,vip1,vip2,vip3,vip4,vip5,vip6,vip7,vip8]);
+
+  const formatTime = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${days}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };  
+
   return (
     <Page title="Home">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
         <div className="flex flex-wrap justify-start gap-0">
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/1 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -309,26 +240,26 @@ export function Home2() {
                     <h3>Current VIP</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    0
+                    {affiliateData.level>0?(parseInt(affiliateData.level)-1):'User'}
                 </div>
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
-                    <CurrencyDollarIcon className="size-9" />
+                    <CubeTransparentIcon className="size-9" />
                   </Button>
                 </div>
                 <div  className="flex flex-wrap justify-start text-sm">
-                    <h3>Available Balance</h3>
+                    <h3>BNB Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    $0.00
+                    ${parseFloat(bnbBalance).toFixed(3)}
                 </div>                
               </div>
-          </div>          
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
+          </div>
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -339,11 +270,26 @@ export function Home2() {
                     <h3>USDT Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    $0.00
+                    ${parseFloat(usdtBalance).toFixed(3)} 
+                </div>
+              </div>
+          </div>
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
+              <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
+                <div  className="flex flex-wrap justify-start mb-10">
+                  <Button color="primary" isGlow isIcon className="size-12">
+                    <CurrencyDollarIcon className="size-9" />
+                  </Button>
+                </div>
+                <div  className="flex flex-wrap justify-start text-sm">
+                    <h3>Available Balance</h3>
+                </div>
+                <div className="flex flex-wrap justify-start text-lg">
+                    ${parseFloat(walletData.balance).toFixed(3)} 
                 </div>                
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/4">
+          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -354,171 +300,274 @@ export function Home2() {
                     <h3>Total Income</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    $0.00
+                    ${parseFloat(walletData.totalIncome).toFixed(3)} 
                 </div>
               </div>
           </div>          
         </div>
         <div className="flex flex-wrap justify-start gap-0">
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex gap-2 justify-between">
-                <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$0</div>
-                  <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
-                  <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">0:00:00:00</div>
-                </div>                
-                <Circlebar
-                  value={300/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{300}%</span>
-                </Circlebar>
-              </div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                Starter: Completed
-              </Button>
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
                   <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$30</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip0.amount>0?vip0.cap:30}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-lg mb-1">${v0Collect}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">0:00:00:00</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v0CoolDown) )}</div>
                 </div>
-                <Circlebar
-                  value={300/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{300}%</span>
+                <Circlebar color="secondary" value={100-(!isNaN(v0Percent)?v0Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v0Percent)?v0Percent:0}%</span>
                 </Circlebar>
               </div>
-              <Button
+              <Button onClick={() => {
+                  setAction(vip0.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                VIP1: Completed 
+                {vip0.amount==0 ?'Activate 10 USDT':'Collect'}
               </Button>
             </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+          <div className={v0CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
-            <div className="mx-8 flex gap-2 justify-between">
+              <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
                   <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$150</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip1.amount>0?vip1.cap:150}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$1.00</div>
+                  <div className="truncate font-medium text-lg mb-1">${v1Collect}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">01:00:00:00</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v1CoolDown) )}</div>
                 </div>
-                <Circlebar color="secondary" value={150/300*100} isActive>
-                  <span className="text-lg font-medium text-gray-100 dark:text-dark-100">
-                    {150/300*100}%
-                  </span>
+                <Circlebar color="secondary" value={100-(!isNaN(v1Percent)?v1Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v1Percent)?v1Percent:0}%</span>
                 </Circlebar>
               </div>
-              <Button
+              <Button onClick={() => {
+                  setAction(vip1.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                VIP2: Collect
-              </Button>
-    
-            </div>
-          </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
-              <div className="mx-8 flex gap-2 justify-between">
-                <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$300</div>
-                  <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
-                  <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">0:00:00:00</div>
-                </div>                
-                <Circlebar
-                  value={0/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{0}%</span>
-                </Circlebar>
-              </div>
-              <Button
-                unstyled
-                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
-              >
-                VIP3: Activate 100 USDT
+                {vip1.amount==0 ?'Activate 50 USDT':'Collect'}
               </Button>
             </div>
           </div>
-
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
+          <div className={v1CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
                   <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$600</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip2.amount>0?vip2.cap:300}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-lg mb-1">${v2Collect}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">0:00:00:00</div>
-                </div>                
-                <Circlebar
-                  value={0/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{0}%</span>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v2CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v2Percent)?v2Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v2Percent)?v2Percent:0}%</span>
                 </Circlebar>
               </div>
-              <Button
+              <Button onClick={() => {
+                  setAction(vip2.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                VIP4: Activate 200 USDT
+                {vip2.amount==0 ?'Activate 100 USDT':'Collect'}
               </Button>
             </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
-            <div className="rounded-lg bg-gradient-to-br from-gray-600 to-gray-600 px-4 pb-4 pt-5 text-center ">
+          <div className={v2CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
                   <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">$1,200</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip3.amount>0?vip3.cap:600}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">$0.00</div>
+                  <div className="truncate font-medium text-lg mb-1">${v3Collect}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
-                  <div className="truncate font-medium text-lg">0:00:00:00</div>
-                </div>                
-                <Circlebar
-                  value={0/300*100}
-                  className="[&_.circlebar-inner-path]:stroke-white/80 [&_.circlebar-rail-path]:stroke-white/20"
-                >
-                  <span className="text-lg font-medium text-white">{0}%</span>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v3CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v3Percent)?v3Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v3Percent)?v3Percent:0}%</span>
                 </Circlebar>
               </div>
-              <Button
+              <Button onClick={() => {
+                  setAction(vip3.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                VIP5: Activate 400 USDT
+                {vip3.amount==0 ?'Activate 200 USDT':'Collect'}
+              </Button>
+            </div>
+          </div>
+          <div className={v3CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip4.amount>0?vip4.cap:1200}</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">${v4Collect}</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v4CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v4Percent)?v4Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v4Percent)?v4Percent:0}%</span>
+                </Circlebar>
+              </div>
+              <Button onClick={() => {
+                  setAction(vip4.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                {vip3.amount==0 ?'Activate 400 USDT':'Collect'}
+              </Button>
+            </div>
+          </div>
+          <div className={v4CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip5.amount>0?vip5.cap:2400}</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">${v5Collect}</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v5CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v5Percent)?v5Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v5Percent)?v5Percent:0}%</span>
+                </Circlebar>
+              </div>
+              <Button onClick={() => {
+                  setAction(vip5.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                {vip5.amount==0 ?'Activate 800 USDT':'Collect'}
+              </Button>
+            </div>
+          </div>
+          <div className={v5CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip6.amount>0?vip6.cap:4800}</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">${v6Collect}</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v6CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v6Percent)?v6Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v6Percent)?v6Percent:0}%</span>
+                </Circlebar>
+              </div>
+              <Button onClick={() => {
+                  setAction(vip6.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                {vip6.amount==0 ?'Activate 1600 USDT':'Collect'}
+              </Button>
+            </div>
+          </div>
+          <div className={v6CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip7.amount>0?vip7.cap:9600}</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">${v7Collect}</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v7CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v7Percent)?v7Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v7Percent)?v7Percent:0}%</span>
+                </Circlebar>
+              </div>
+              <Button onClick={() => {
+                  setAction(vip7.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                {vip7.amount==0 ?'Activate 3200 USDT':'Collect'}
+              </Button>
+            </div>
+          </div>
+          <div className={v7CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+            <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
+              <div className="mx-8 flex gap-2 justify-between">
+                <div className="text-md uppercase text-white text-start">
+                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip8.amount>0?vip8.cap:19200}</div>
+                  <div className="truncate font-medium text-sm">Available</div>
+                  <div className="truncate font-medium text-lg mb-1">${v8Collect}</div>
+                  <div className="truncate font-medium text-sm">CoolDown</div>
+                  <div className="truncate font-medium text-lg">{formatTime( parseInt(v8CoolDown) )}</div>
+                </div>
+                <Circlebar color="secondary" value={100-(!isNaN(v8Percent)?v8Percent:0)} isActive>
+                  <span className="text-lg font-medium text-white">{!isNaN(v8Percent)?v8Percent:0}%</span>
+                </Circlebar>
+              </div>
+              <Button onClick={() => {
+                  setAction(vip8.amount==0?'activate':'collect');
+                  setSuccess(false);
+                  setError(false);
+                  open(); }
+                }
+                unstyled
+                className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
+              >
+                {vip8.amount==0 ?'Activate 6400 USDT':'Collect'}
               </Button>
             </div>
           </div>
         </div>
       </div>
+      <ConfirmModal
+            show={isOpen}
+            onClose={close}
+            messages={messages}
+            onOk={onOk}
+            confirmLoading={confirmLoading}
+            state={state}
+          />   
     </Page>
   );
 }

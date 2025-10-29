@@ -30,7 +30,7 @@ const protectedRoutes = {
             {
               path: "home",
               lazy: async () => ({
-                Component: (await import("app/pages/dashboards/home")).Home2,
+                Component: (await import("app/pages/dashboards/home")).Home,
               }),
             },
             {

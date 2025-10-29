@@ -5,7 +5,7 @@ import { smartContractAbi } from "../constants/smartContract.constant";
 
 export function useSmartContract() {
 
-  const WNTradesContractAddress = '0x720C9AafbC40ca8f8198988b6aB7CCc976B41359';
+  const SmartContractAddress = '0xCb00624a76d66fEF68Dc156522dEf645e612b333';
   const usdtContractAddress = '0x55d398326f99059fF775485246999027B3197955';
 
   const [network, setNetwork] = useState(null);
@@ -14,22 +14,20 @@ export function useSmartContract() {
   const [account, setAccount] = useState('0x0000000000000000000000000000000000000000');
   const [address, setAddress] = useState('0x0000000000000000000000000000000000000000');
   const [connected, setConnected] = useState(false);
-  const [WNTradesContract,setWNTradesContract] = useState(null);
-  const [usdtContract,setUsdtContract] = useState(null);
+  const [CrowdVaultContract,setWNTradesContract] = useState(null);
+  const [USDTContract,setUsdtContract] = useState(null);
   const [bnbBalance, setBnbBalance] = useState(0);
   const [usdtBalance, setUsdtBalance] = useState(0);
-  const [rewardsBalance, setRewardsBalance] = useState(0);
-  const [upgradeAmount, setUpgradeAmount] = useState(0);
-  const [regFee, setRegFee] = useState(0);
-  const [brokerFee, setBrokerFee] = useState(0);
-  const [affiliateData, setAffiliateData] = useState([]);
-  const [brokerData, setBrokerData] = useState([]);
+  const [vaultBalance, setVaultBalance] = useState(0);
   const [walletData, setWalletData] = useState([]);
-  const [passiveData, setPassiveData] = useState([]);
-  const [availableEquity, setAvailableEquity] = useState(0);
-  const [availablePassive, setAvailablePassive] = useState(0);
-  const [passivePercent, setPassivePercent] = useState(0);
-  const [lastCallTime, setLastCallTime] = useState(0);
+  const [affiliateData, setAffiliateData] = useState([]);
+
+  const [lastBlockNumber, setLastBlockNumber] = useState(0);
+  const [lastBlockTime, setLastBlockTime] = useState(0);
+  const [regFee, setRegFee] = useState(0);
+  const [entryFee, setEntryFee] = useState(0);
+  const [agentFee, setAgentFee] = useState(0);
+  const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
     // Check if window.ethereum is available (MetaMask or similar)
@@ -66,35 +64,25 @@ export function useSmartContract() {
         const bnbBalance = await newProvider.getBalance(address);
         setBnbBalance(ethers.formatEther(bnbBalance));
 
-        const WNTradesContract = new ethers.Contract(WNTradesContractAddress, smartContractAbi, signer);
-        setWNTradesContract(WNTradesContract);        
-    
-        const usdtContract = new ethers.Contract(usdtContractAddress, erc20Abi, signer);
-        setUsdtContract(usdtContract);
+        setWNTradesContract(new ethers.Contract(SmartContractAddress, smartContractAbi, signer));        
+        setUsdtContract(new ethers.Contract(usdtContractAddress, erc20Abi, signer));
+        if( CrowdVaultContract && USDTContract && loaded  ) {
+          setLoaded(false);
+          setWalletData(await CrowdVaultContract.getWalletData(address));
+          setVaultBalance(await CrowdVaultContract.getWalletData(address).balance);
 
-        const usdtBalance = await usdtContract.balanceOf(address);
-        setUsdtBalance(ethers.formatEther(usdtBalance,18));
-    
-        const upgradeAmount = await WNTradesContract.calculateUpgradeAmount(address);
-        setUpgradeAmount(ethers.formatEther(upgradeAmount));
-        
-        const affiliateData = await WNTradesContract.getAffiliateData(address);
-        setAffiliateData(affiliateData);
+          setRegFee(await CrowdVaultContract.regFee());
+          setEntryFee(await CrowdVaultContract.entryFee());
+          setAgentFee(await CrowdVaultContract.agentFee());
+          setLastBlockTime(await CrowdVaultContract.getLastBlockTime(address));
+          setLastBlockNumber(await CrowdVaultContract.getLastBlockNumber(address));
+          setWalletData(await CrowdVaultContract.getWalletData(address))
+          setAffiliateData(await CrowdVaultContract.getAffiliateData(address))
 
-        const walletData = await WNTradesContract.getWalletData(address);
-        setWalletData(walletData);
-        setRewardsBalance((parseFloat(walletData.balance)).toFixed(2));
-        setPassiveData(await WNTradesContract.getPassiveData(address));  
-        setAvailableEquity(await WNTradesContract.getAvailableEquity(affiliateData.level,walletData.totalIncome ));
-        setRegFee(await WNTradesContract.regFee());
-        setBrokerFee(await WNTradesContract.brokerFee());
+          setUsdtBalance(ethers.formatEther(await USDTContract.balanceOf(address)));
 
-        setAvailablePassive(await WNTradesContract.getPassiveReward(address));
-        setPassivePercent(parseInt(await WNTradesContract.getPassivePercent(address))/10000);
-
-        const lastCall = await WNTradesContract.getLastCallTime(address);
-        setLastCallTime(lastCall);
-
+          //console.log(ethers.formatEther(await USDTContract.balanceOf(address)))
+        }
       } catch (error) {
         console.error(error);
       }
@@ -114,47 +102,36 @@ export function useSmartContract() {
         window.ethereum.removeListener('accountsChanged', handleNetworkChange); 
       }
     };
-  },[]);
+  },[CrowdVaultContract,USDTContract,loaded]);
 
   const convertWeiToEther = (amount) =>{
     return ethers.formatEther(amount);
   }
-  const getBrokerData = useCallback(async (address) =>{
-    console.log(address)
-    if( !address || !WNTradesContract || address!='0x0000000000000000000000000000000000000000' ) return {"parent":"","fees":0,"isActive":false,"childrenCount":0};
-    const brokerData = await WNTradesContract.getBrokerData(address);
-    setBrokerData(brokerData);  
-    return  brokerData;
-  },[WNTradesContract])
+
+  const getWalletData = async () =>{
+    if( !address || !CrowdVaultContract ) return {"balance":0,"totalIncome":0,"coolDown":0};
+    return await CrowdVaultContract.getWalletData(address);
+  }
 
   const getLastCallTime = async (address) =>{
-    if( !address || !WNTradesContract ) return {"parent":"","merchant":"","level":0};
-    return await WNTradesContract.getLastCallTime(address);
+    if( !address || !CrowdVaultContract ) return {"parent":"","merchant":"","level":0};
+    return await CrowdVaultContract.getLastCallTime(address);
   }
 
-  const getAffiliatesData = async (address) =>{
-    if( !address || !WNTradesContract ) return {"parent":"","merchant":"","level":0};
-    return await WNTradesContract.affiliates(address);
-  }
-  const getWalletdData = async (address) =>{
-    if( !address || !WNTradesContract ) return {"balance":0,"capping":0,"totalIncome":0,"coolDown":0};
-    return await WNTradesContract.getAffiliateData(address);
+  const getAffiliateData = async () =>{
+    if( !address || !CrowdVaultContract ) return {"parent":"","agent":"","level":0,"childrenCount":0};
+    return await CrowdVaultContract.getAffiliateData(address);
   }
 
-  const getPassivePercent = async (address) =>{
-    if( !address || !WNTradesContract || address!='0x0000000000000000000000000000000000000000' ) return 0;
-    return await WNTradesContract.getPassivePercent(address);
+  const getVaultData = async (level) =>{
+    if( !address || !CrowdVaultContract ) return {"amount":10,"cap":0,"coolDown":0,"level":level};
+    return await CrowdVaultContract.getVaultData(address,level);
   }
 
   const registerWallet = async  (_referrer) =>{
-    var registrationFee = ethers.formatEther(regFee,18);
-    var activeRegFee = ethers.formatEther('1000000000000000000',18);
+    if( !CrowdVaultContract ) return false;
     try {
-        if( registrationFee >= activeRegFee ){
-            const approved = await approvedSpender(regFee)
-            if( !approved ){ return false; }
-        }
-        const tx = await WNTradesContract.connect(signer).register(_referrer);
+        const tx = await CrowdVaultContract.connect(signer).register(_referrer);
         await tx.wait();
         if( tx ){
             return true;
@@ -165,19 +142,13 @@ export function useSmartContract() {
         alert(error);
         return false
     }       
-      
   }
-  const activateBroker = async () => {
+  const deposit = async (amount) => {
+    if( !CrowdVaultContract ) return false;
     try {
-      const brokerFees = await WNTradesContract.brokerFee();
-      var approved = false;
-      if( brokerFees > walletData.balance ){
-        approved = await approvedSpender( brokerFees );
-      }else{
-        approved = true;
-      }
+      const approved = await approvedSpender(ethers.parseUnits(amount.toString(), 18));
       if( approved==true ){
-        const tx = await WNTradesContract.activateBroker();
+        const tx = await CrowdVaultContract.depositBalance(ethers.parseUnits(amount.toString(), 18));
         await tx.wait();
         if( tx ){
           console.log(`Transaction Hash: ${tx.hash}`);
@@ -191,27 +162,11 @@ export function useSmartContract() {
       return false;
     }
   }
-  const activateWithDeposit = async () => {
+  const activateVIP = async () => {
+    if( !address || !CrowdVaultContract ) return false;
     try {
-      const approved = await approvedSpender( await WNTradesContract.calculateUpgradeAmount(account) );
-      if( approved==true ){
-        const tx = await WNTradesContract.activateWithDeposit();
-        await tx.wait();
-        if( tx ){
-          console.log(`Transaction Hash: ${tx.hash}`);
-          return true;
-        }else{return false;}
-      }
-    }
-    catch(error){
-      console.error(error);
-      alert(error);
-      return false;
-    }
-  }
-  const activateWithWallet = async () => {
-    try {
-        const tx = await WNTradesContract.activateWithWallet();
+       console.log(`Signer Address: ${address}`);
+        const tx = await CrowdVaultContract.activateVIP();
         await tx.wait();
         if( tx ){
           console.log(`Transaction Hash: ${tx.hash}`);
@@ -226,7 +181,7 @@ export function useSmartContract() {
   }
   const withdraw = async (amount) => {
     try {
-      const tx = await WNTradesContract.withdraw(ethers.parseUnits(amount.toString(), 18));
+      const tx = await CrowdVaultContract.withdrawBalance(ethers.parseUnits(amount.toString(), 18));
       await tx.wait();
       if( tx ){
         return true;
@@ -239,99 +194,43 @@ export function useSmartContract() {
       return false;
     }
   }
-  const transferBalance = async (recipient, amount) => {
-    if( recipient=='' || amount<=0 || parseFloat(amount)>parseFloat(walletData.balance) ){ return false; }
-    try {
-      let tx = await WNTradesContract.transferBalance(recipient,ethers.parseUnits(amount.toString(), 18))
-      await tx.wait();
-      console.log('Balance transferred successfully');
-      return true;
-    } catch (error) {
-      console.error('Transfer failed:', error);
-      return false;
-    }
-  };   
-  const collectPassive = async () =>{
-    try {
-      let tx = await WNTradesContract.collectPassive();
-      await tx.wait();
-      console.log('Collect Success');
-      return true;
-    } catch (error) {
-      console.error('Transfer failed:', error);
-      return false;
-    }
-  }
-  const getPassiveReward = async (address) => {
-    return await WNTradesContract.getPassiveReward(address);
-  }
 
   const getChildren = useCallback(async (address) => {
-    if (!address || !WNTradesContract) return { children: [], affiliates: [] };
+    if (!address || !CrowdVaultContract) return { children: [], affiliates: [] };
   
     // Fetch children
-    const childrenBatch = await WNTradesContract.getChildren(true, address, 0, 100);
+    const childrenBatch = await CrowdVaultContract.getChildren(true, address, 0, 100);
   
     // Fetch level for each child
     const childrenWithLevels = await Promise.all(
       childrenBatch.map(async (child) => {
-        const [parent, broker, level] = await WNTradesContract.affiliates(child);
+        const [parent, agent, level] = await CrowdVaultContract.getAffiliateData(child);
+        console.log(`Parent: ${parent}`)
+        console.log(`agent: ${agent}`)
+        console.log(`level: ${level}`)
         return {
           address: child,
           level: level,
           parent,
-          broker,
+          agent,
         };
       })
     );
   
     // Fetch affiliate info for the root address as well
-    const affiliates = await WNTradesContract.affiliates(address);
+    const affiliates = await CrowdVaultContract.getAffiliateData(address);
   
     return { children: childrenWithLevels, affiliates };
-  }, [WNTradesContract]); // only changes if contract changes
-
-  const fetchAffiliateData = async (rootAddress) => {
-    const [parent, merchant, level, childrenCount] = await WNTradesContract.getAffiliateData(rootAddress);
-    return {
-      id: rootAddress,
-      parent,
-      merchant,
-      level,
-      childrenCount
-    };
-  };  
-
-  const buildTree = async (rootAddress) => {
-    const rootData = await fetchAffiliateData(rootAddress);
-  
-    const node = {
-      id: rootData.id,
-      title: `Level ${rootData.level}`, // Customize this title as needed
-      isRoot: rootData.parent === '0x0000000000000000000000000000000000000000', // Root node check
-      children: []
-    };
-  
-    // If there are children, recursively fetch their data
-    for (let i = 0; i < rootData.childrenCount; i++) {
-      // For each child, fetch the child’s affiliate data and build its subtree
-      const childAddress = rootData.id;  // This will change once we implement a more complex child retrieval logic
-      const childNode = await buildTree(childAddress);
-      node.children.push(childNode);
-    }
-  
-    return node;
-  };
+  }, [CrowdVaultContract]); // only changes if contract changes
 
   const approvedSpender = async (amount) => {
     try {
-      const allowance = await usdtContract.allowance( account, WNTradesContractAddress);
-      console.log(`Allowance ${ethers.formatEther(amount)} tokens for spending`);
-      console.log(`Available ${allowance} allowance for spending`);
-      console.log(`Available ${amount} amount for spending`);
+      const allowance = await USDTContract.allowance( account, SmartContractAddress);
+      // console.log(`Allowance ${ethers.formatEther(amount)} tokens for spending`);
+      // console.log(`Available ${allowance} allowance for spending`);
+      // console.log(`Available ${amount} amount for spending`);
       if (allowance < amount ) {
-        //await usdtContract.approve(WNTradesContractAddress, 0)
-        const tx = await usdtContract.approve(WNTradesContractAddress, amount)
+        const tx = await USDTContract.approve(SmartContractAddress, amount)
         await tx.wait();
         if( tx ){
           console.log(`Approved ${ethers.formatEther(amount)} tokens for spending`);
@@ -342,21 +241,21 @@ export function useSmartContract() {
     }
     catch(error){
       console.error(error);
-      alert(error);
       return false;
     }      
   }
 
   const getFees = useCallback(async () => {
-    if ( !WNTradesContract) return { brokerFee: 0, entryFee: 0 };
-    const brokerFee = await WNTradesContract.brokerFee();
-    const entryFee = await WNTradesContract.entryFee();
+    if ( !CrowdVaultContract) return { brokerFee: 0, entryFee: 0 };
+    const regFee = await CrowdVaultContract.regFee();
+    const entryFee = await CrowdVaultContract.entryFee();
+    const agentFee = await CrowdVaultContract.agentFee();
     return {
-      brokerFee: ethers.formatEther(brokerFee),
-      entryFee: ethers.formatEther(entryFee)
+      regFee: ethers.formatEther(regFee),
+      entryFee: ethers.formatEther(entryFee),
+      agentFee: ethers.formatEther(agentFee)
     };
-  }, [WNTradesContract]); // only changes if contract changes
-
+  }, [CrowdVaultContract]);
 
   return {
     network,
@@ -365,39 +264,29 @@ export function useSmartContract() {
     account,
     address,
     connected,
-    WNTradesContract,
+    CrowdVaultContract,
+    affiliateData,
+    walletData,
     bnbBalance,
     usdtBalance,
-    rewardsBalance,
-    upgradeAmount,
+    vaultBalance,
+    lastBlockTime,
+    lastBlockNumber,
+    agentFee,
+    entryFee,
     regFee,
-    brokerFee,
-    affiliateData,
-    brokerData,
-    walletData,
-    passiveData,
-    availableEquity,
-    availablePassive,
-    passivePercent,
-    lastCallTime,
+    getWalletData,
+    getAffiliateData,
+    getVaultData,
     convertWeiToEther,
     registerWallet,
-    activateWithDeposit,
-    activateWithWallet,
-    withdraw,
-    transferBalance,
-    getWalletdData,
-    getPassiveReward,
-    getBrokerData,
-    getAffiliatesData,
-    getPassivePercent,
     getLastCallTime,
-    collectPassive,
-    fetchAffiliateData,
-    activateBroker,
-    buildTree,
     getChildren,
+    activateVIP,
     getFees,
+    withdraw,
+    deposit
+    
   };
 
 }
