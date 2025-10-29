@@ -237,10 +237,10 @@ export function Home() {
                   </Button>
                 </div>
                 <div  className="flex flex-wrap justify-start text-sm">
-                    <h3>Current VIP</h3>
+                    <h3>VIP {affiliateData.level>0?(parseInt(affiliateData.level)-1):'0'}</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    {affiliateData.level>0?(parseInt(affiliateData.level)-1):'User'}
+                    &nbsp;
                 </div>
               </div>
           </div>
@@ -255,7 +255,7 @@ export function Home() {
                     <h3>BNB Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    ${parseFloat(bnbBalance).toFixed(3)}
+                    ${parseFloat(bnbBalance).toFixed(4)}
                 </div>                
               </div>
           </div>
@@ -270,7 +270,7 @@ export function Home() {
                     <h3>USDT Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    ${parseFloat(usdtBalance).toFixed(3)} 
+                    ${parseFloat(usdtBalance).toFixed(4)} 
                 </div>
               </div>
           </div>
@@ -285,7 +285,7 @@ export function Home() {
                     <h3>Available Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    ${parseFloat(walletData.balance).toFixed(3)} 
+                    ${parseFloat(walletData.balance).toFixed(4)} 
                 </div>                
               </div>
           </div>
@@ -300,7 +300,7 @@ export function Home() {
                     <h3>Total Income</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    ${parseFloat(walletData.totalIncome).toFixed(3)} 
+                    ${parseFloat(walletData.totalIncome).toFixed(4)} 
                 </div>
               </div>
           </div>          
@@ -442,7 +442,7 @@ export function Home() {
                 unstyled
                 className="mt-5 w-full rounded-lg border border-white/10 bg-white/20 py-2 text-white hover:bg-white/30 focus:bg-white/30"
               >
-                {vip3.amount==0 ?'Activate 400 USDT':'Collect'}
+                {vip4.amount==0 ?'Activate 400 USDT':'Collect'}
               </Button>
             </div>
           </div>
