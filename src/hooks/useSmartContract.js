@@ -24,9 +24,6 @@ export function useSmartContract() {
 
   const [lastBlockNumber, setLastBlockNumber] = useState(0);
   const [lastBlockTime, setLastBlockTime] = useState(0);
-  const [regFee, setRegFee] = useState(0);
-  const [entryFee, setEntryFee] = useState(0);
-  const [agentFee, setAgentFee] = useState(0);
   const [loaded, setLoaded] = useState(true);
 
   useEffect(() => {
@@ -71,9 +68,6 @@ export function useSmartContract() {
           setWalletData(await CrowdVaultContract.getWalletData(address));
           setVaultBalance(await CrowdVaultContract.getWalletData(address).balance);
 
-          setRegFee(await CrowdVaultContract.regFee());
-          setEntryFee(await CrowdVaultContract.entryFee());
-          setAgentFee(await CrowdVaultContract.agentFee());
           setLastBlockTime(await CrowdVaultContract.getLastBlockTime(address));
           setLastBlockNumber(await CrowdVaultContract.getLastBlockNumber(address));
           setWalletData(await CrowdVaultContract.getWalletData(address))
@@ -270,9 +264,6 @@ export function useSmartContract() {
     vaultBalance,
     lastBlockTime,
     lastBlockNumber,
-    agentFee,
-    entryFee,
-    regFee,
     getWalletData,
     getAffiliateData,
     getVaultData,

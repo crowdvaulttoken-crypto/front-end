@@ -21,8 +21,8 @@ export default function Activate() {
     lastCallTime,
     registerWallet,
   } = useSmartContract();  
-
-  const isRegistered = affiliateData.parent=='0x0000000000000000000000000000000000000000'?false:true;
+  console.log(affiliateData.parent)
+  const isRegistered =  affiliateData.parent=='0x0000000000000000000000000000000000000000'?false:true;
   const [yourwalletaddress,setYourWalletAddress] = useState(address);
   const [referralWallet,setReferralWallet] = useState("");
   //const [openCountry,setOpenCountry] = useState([]);
