@@ -5,7 +5,7 @@ import { smartContractAbi } from "../constants/smartContract.constant";
 
 export function useSmartContract() {
 
-  const SmartContractAddress = '0xCb00624a76d66fEF68Dc156522dEf645e612b333';
+  const SmartContractAddress = '0xa3EA69611ba67576c3dD56DaB0Baf196dea47ac6';
   const usdtContractAddress = '0x55d398326f99059fF775485246999027B3197955';
 
   const [network, setNetwork] = useState(null);
@@ -249,11 +249,9 @@ export function useSmartContract() {
     if ( !CrowdVaultContract) return { brokerFee: 0, entryFee: 0 };
     const regFee = await CrowdVaultContract.regFee();
     const entryFee = await CrowdVaultContract.entryFee();
-    const agentFee = await CrowdVaultContract.agentFee();
     return {
       regFee: ethers.formatEther(regFee),
       entryFee: ethers.formatEther(entryFee),
-      agentFee: ethers.formatEther(agentFee)
     };
   }, [CrowdVaultContract]);
 

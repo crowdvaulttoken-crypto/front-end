@@ -17,13 +17,12 @@ export default function Tree() {
   const [parent, setParent] = useState('');
   const [parentLevel, setParentLevel] = useState('');
   const [level, setLevel] = useState(1);
-  const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
     let isMounted = true; // track if component is still mounted
   
     const fetchAffiliateData = async () => {
-      if (!address || !CrowdVaultContract) return;
+      if (!address || !CrowdVaultContract || !loading) return;
       
       const root = head ? head : address;
   
@@ -38,22 +37,23 @@ export default function Tree() {
             const [parent, agent, level] = await CrowdVaultContract.getAffiliateData(child);
             return {
               address: child,
-              level: parseInt(level),
-              parent,
-              agent,
+              level: parseInt(level)>0 ?  parseInt(level)-1 : 0,
+              parent:parent,
+              agent: agent,
             };
           })
         );
 
-        const affiliates = await CrowdVaultContract.getAffiliateData(root);
+        //const affiliates = await CrowdVaultContract.getAffiliateData(root);
+        const [parent,  , level] = await CrowdVaultContract.getAffiliateData(root);
 
         const childrenList = Array.isArray(childrenWithLevels) ? childrenWithLevels : [];
-        const getParent = Array.isArray(affiliates) ? affiliates[0] : root;
-        const getParentLevel = Array.isArray(affiliates) ? parseInt(affiliates[2]) < 1?0:parseInt(affiliates[2])-1   : 0;
+        const getParent = parent;
+        const getParentLevel = parseInt(level)>0 ? parseInt(level)-1 : 0 ;
         setChildren(childrenList);
         setParent(getParent);
         setParentLevel(getParentLevel);
-    
+        console.log(getParent);
       } catch (error) {
         if (isMounted) {
           console.error("Failed to fetch affiliate data:", error);
@@ -61,18 +61,15 @@ export default function Tree() {
       } finally {
         if (isMounted) {
           setLoading(false);
-          setIsLoaded(true);
         }
       }
     };
 
-    if( !isLoaded ) {
-      fetchAffiliateData();
-    }
+    fetchAffiliateData();
     return () => {
       isMounted = false; // cleanup
     };
-  }, [CrowdVaultContract,address,head,isLoaded]); // keep only stable deps
+  }, [CrowdVaultContract,address,head,loading]); // keep only stable deps
 
   return (
     <Page title="Network Tree">
@@ -86,8 +83,8 @@ export default function Tree() {
           <Badge color="error" className="rounded-full me-1" 
             onClick={() => { if( address!=head && head!=null && level>1){
               setHead(parent); 
-              setLevel(level-1); 
-              setIsLoaded(false);
+              setLevel(level-1);
+              setLoading(true);
             }}}
           >{parentLevel}</Badge>
           <Badge>{!head?address:head}</Badge>
@@ -109,7 +106,7 @@ export default function Tree() {
                     if( head!=child.address) {
                       setHead(child.address);
                       setLevel(level+1);
-                      setIsLoaded(false);
+                      setLoading(true);
                     }
                   } 
                 }>{parseInt(child.level)}</Badge>
