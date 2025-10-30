@@ -1,5 +1,5 @@
-export const APP_NAME = "WNTRADES";
-export const APP_KEY = "wntrades";
+export const APP_NAME = "CROWDVAULT";
+export const APP_KEY = "CROWDVAULT";
 
 // Redirect Paths
 export const REDIRECT_URL_KEY = "redirect";
