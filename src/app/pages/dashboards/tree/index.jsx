@@ -46,10 +46,10 @@ export default function Tree() {
 
         //const affiliates = await CrowdVaultContract.getAffiliateData(root);
         const [parent,  , level] = await CrowdVaultContract.getAffiliateData(root);
-
+        
         const childrenList = Array.isArray(childrenWithLevels) ? childrenWithLevels : [];
         const getParent = parent;
-        const getParentLevel = parseInt(level)>0 ? parseInt(level)-1 : 0 ;
+        const getParentLevel = parseInt(level)>0 && parseInt(level)<=8 ? parseInt(level)-1 : parseInt(level)>=9 ? 8 : 0;
         setChildren(childrenList);
         setParent(getParent);
         setParentLevel(getParentLevel);
