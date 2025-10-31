@@ -19,15 +19,11 @@ export default function Tree() {
   const [level, setLevel] = useState(1);
   
   useEffect(() => {
+    if (!address || !CrowdVaultContract || !loading) return;
     let isMounted = true; // track if component is still mounted
-  
     const fetchAffiliateData = async () => {
-      if (!address || !CrowdVaultContract || !loading) return;
-      
-      const root = head ? head : address;
-  
       try {
-        //const adata = await getChildren(root);
+        const root = head ? head : address;
         
         if (!isMounted) return; 
         const childrenBatch = await CrowdVaultContract.getChildren(true, root, 0, 100);
@@ -43,7 +39,6 @@ export default function Tree() {
             };
           })
         );
-
         //const affiliates = await CrowdVaultContract.getAffiliateData(root);
         const [parent,  , level] = await CrowdVaultContract.getAffiliateData(root);
         
@@ -53,7 +48,7 @@ export default function Tree() {
         setChildren(childrenList);
         setParent(getParent);
         setParentLevel(getParentLevel);
-        console.log(getParent);
+        
       } catch (error) {
         if (isMounted) {
           console.error("Failed to fetch affiliate data:", error);
@@ -64,7 +59,7 @@ export default function Tree() {
         }
       }
     };
-
+    
     fetchAffiliateData();
     return () => {
       isMounted = false; // cleanup
