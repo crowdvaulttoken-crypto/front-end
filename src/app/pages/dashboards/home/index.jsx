@@ -27,6 +27,7 @@ export function Home() {
     activateVIP,
     collect
   } = useSmartContract();  
+  const [vx, setVx] = useState({"amount":10,"cap":0,"coolDown":0});
   const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":0});
   const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":0});
   const [vip2, setVip2] = useState({"amount":100,"cap":300,"coolDown":0});
@@ -80,8 +81,10 @@ export function Home() {
         setLoaded(true);
         const now = Math.floor(Date.now() / 1000);
 
-        // const vx = await CrowdVaultContract.vaults(address,0);
-        // const [v0amount, v0cap, v0cd] = await CrowdVaultContract.vaults(address,0);
+        const vx = await CrowdVaultContract.vaults(address,0);
+        setVx(vx);
+        console.log(`capping: ${parseInt(vx[1])/1e18}`);
+        console.log(`capping: ${vx.cap}`);
         const v0 = await CrowdVaultContract.getVaultData(address,0);
         setVip0(v0);
         setV0CoolDown(v0.coolDown);
@@ -314,7 +317,7 @@ export function Home() {
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
                   <div className="truncate font-medium text-sm">Capping</div>
-                  <div className="truncate font-medium text-lg mb-1">${vip0.amount>0?vip0.cap:30}</div>
+                  <div className="truncate font-medium text-lg mb-1">${vip0.amount>0?parseInt(vx[1])/1e18:30}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v0Collect}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
