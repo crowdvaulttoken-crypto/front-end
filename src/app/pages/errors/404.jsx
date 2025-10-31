@@ -7,6 +7,7 @@ import { Page } from "components/shared/Page";
 import { Button } from "components/ui";
 import { useThemeContext } from "app/contexts/theme/context";
 import { useHover } from "hooks";
+import crowdvaultlogo from "assets/crowdvaultlogo.png?react";
 
 // ----------------------------------------------------------------------
 
@@ -25,6 +26,7 @@ export default function Error404() {
               "--primary-light": primary[300],
             }}
           />
+          <img src={crowdvaultlogo} alt="nature image" />
           <p className="pt-4 text-xl font-semibold text-gray-800 dark:text-dark-50">
             Oops. This Page Not Found.
           </p>

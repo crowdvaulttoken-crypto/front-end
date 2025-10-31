@@ -249,7 +249,7 @@ export function Home() {
                 </div>
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
+          <div className="px-4 pb-4 pt-5 text-center w-1/2 md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -264,7 +264,7 @@ export function Home() {
                 </div>                
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
+          <div className="px-4 pb-4 pt-5 text-center w-1/2 md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -279,7 +279,7 @@ export function Home() {
                 </div>
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
+          <div className="px-4 pb-4 pt-5 text-center w-1/2 md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">
@@ -294,7 +294,7 @@ export function Home() {
                 </div>                
               </div>
           </div>
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/5">
+          <div className="px-4 pb-4 pt-5 text-center w-1/2 md:w-1/2 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
                 <div  className="flex flex-wrap justify-start mb-10">
                   <Button color="primary" isGlow isIcon className="size-12">

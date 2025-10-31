@@ -16,7 +16,10 @@ import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { Fragment } from "react";
 
 // Local Imports
-import Logo from "assets/appLogo.svg?react";
+//import Logo from "assets/appLogo.svg?react";
+import crowdvaultlogo from "assets/crowdvaultlogo.png?react";
+import crowdvaultname from "assets/crowdvaultname.png?react";
+
 import { Button, Card, Checkbox, InputErrorMsg } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
 import { schema } from "./schema";
@@ -95,11 +98,10 @@ export default function SignIn() {
       <main className="min-h-100vh grid w-full grow grid-cols-1 place-items-center">
         <div className="w-full max-w-[26rem] p-4 sm:px-5">
           <div className="text-center">
-            <Logo className="mx-auto size-16" />
+            <img src={crowdvaultlogo} className="mx-auto h-25 m-5" alt="Logo" />
+            <img src={crowdvaultname} className="mx-auto h-10" alt="Logo" />
+
             <div className="mt-4">
-              <h2 className="text-2xl font-semibold text-gray-600 dark:text-dark-100">
-                CrowdVault
-              </h2>
               <p className="text-gray-400 dark:text-dark-300">
               The crypto community helping system
               </p>
