@@ -24,7 +24,8 @@ export function Home() {
     walletData,
     affiliateData,
     CrowdVaultContract,
-    activateVIP
+    activateVIP,
+    collect
   } = useSmartContract();  
   const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":0});
   const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":0});
@@ -148,16 +149,18 @@ export function Home() {
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
-  const [action, setAction] = useState(false);  
-  const [customTitle, setCustomTitle] = useState(false);  
-  const [customError, setCustomError] = useState('');  
+  const [action, setAction] = useState(false);
+  const [customTitle, setCustomTitle] = useState(false);
+  const [customError, setCustomError] = useState('');
+  const [customPending, setCustomPending] = useState(false);
+  const [collectlvl, setCollectLvl] = useState(0);
   const state = error ? "error" : success ? "success" : "pending";
 
   const messages = {
     pending: {
       Icon: ExclamationTriangleIcon,
       title: customTitle!=false?customTitle:'Please Confirm',
-      description: "Click ok to confirm request.",
+      description: customPending!=false?customPending:'Click ok to confirm request.',
       actionText: "Ok",
     },
     success: {
@@ -176,21 +179,28 @@ export function Home() {
       hash = await activateVIP();
       setCustomTitle(`Activate Rewards`);
       if( !hash ){ setCustomError(`Transfer Failed`); }
+      setCustomTitle(false);
     }
     if( action == 'collect' ){
       setCustomTitle(`Collect Rewards`);
-      setCustomError(`No Ready to collect Failed`);
+      setCustomPending(`Collect VIP ${collectlvl} `);
+      hash = await collect(collectlvl);
+      if( !hash ){ setCustomError(`Collect Failed`); }
+      setCustomPending(false)
+      setCustomTitle(false);
     }
 
     if( hash==true ){
       setConfirmLoading(false);
       setSuccess(true);
       setError(false);
+      setCustomPending(false)
       navigate("/dashboards");
     }
     else {
       setConfirmLoading(false);
       setError(true);
+      setCustomPending(false)
     }
   };  
 
@@ -316,6 +326,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip0.amount==0?'activate':'collect');
+                  setCollectLvl(0);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -344,6 +355,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip1.amount==0?'activate':'collect');
+                  setCollectLvl(1);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -372,6 +384,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip2.amount==0?'activate':'collect');
+                  setCollectLvl(2);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -400,6 +413,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip3.amount==0?'activate':'collect');
+                  setCollectLvl(3);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -428,6 +442,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip4.amount==0?'activate':'collect');
+                  setCollectLvl(4);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -456,6 +471,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip5.amount==0?'activate':'collect');
+                  setCollectLvl(5);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -484,6 +500,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip6.amount==0?'activate':'collect');
+                  setCollectLvl(6);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -512,6 +529,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip7.amount==0?'activate':'collect');
+                  setCollectLvl(7);
                   setSuccess(false);
                   setError(false);
                   open(); }
@@ -540,6 +558,7 @@ export function Home() {
               </div>
               <Button onClick={() => {
                   setAction(vip8.amount==0?'activate':'collect');
+                  setCollectLvl(8);
                   setSuccess(false);
                   setError(false);
                   open(); }

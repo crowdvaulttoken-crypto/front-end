@@ -189,6 +189,21 @@ export function useSmartContract() {
     }
   }
 
+  const collect = async (level) => {
+    if( !address || !CrowdVaultContract ) return false;
+    try {
+        const tx = await CrowdVaultContract.collectPassive(level);
+        await tx.wait();
+        if( tx ){
+          return true;
+        }else{return false;}
+      }
+      catch(error){
+        console.error(error);
+        alert(error);
+        return false;
+      }
+  }
   const getChildren = useCallback(async (address) => {
     if (!address || !CrowdVaultContract) return { children: [], affiliates: [] };
   
@@ -239,16 +254,6 @@ export function useSmartContract() {
     }      
   }
 
-  const getFees = useCallback(async () => {
-    if ( !CrowdVaultContract) return { brokerFee: 0, entryFee: 0 };
-    const regFee = await CrowdVaultContract.regFee();
-    const entryFee = await CrowdVaultContract.entryFee();
-    return {
-      regFee: ethers.formatEther(regFee),
-      entryFee: ethers.formatEther(entryFee),
-    };
-  }, [CrowdVaultContract]);
-
   return {
     network,
     provider,
@@ -272,10 +277,9 @@ export function useSmartContract() {
     getLastCallTime,
     getChildren,
     activateVIP,
-    getFees,
     withdraw,
-    deposit
-    
+    deposit,
+    collect
   };
 
 }
