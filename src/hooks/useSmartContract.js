@@ -66,12 +66,12 @@ export function useSmartContract() {
         setUsdtContract(new ethers.Contract(usdtContractAddress, erc20Abi, signer));
         if( CrowdVaultContract && USDTContract  ) {
           setWalletData(await CrowdVaultContract.getWalletData(address));
-          setVaultBalance(await CrowdVaultContract.getWalletData(address).balance);
           setLastBlockTime(await CrowdVaultContract.getLastBlockTime(address));
           setLastBlockNumber(await CrowdVaultContract.getLastBlockNumber(address));
-          setWalletData(await CrowdVaultContract.getWalletData(address))
           setAffiliateData(await CrowdVaultContract.getAffiliateData(address))
           setUsdtBalance(ethers.formatEther(await USDTContract.balanceOf(address)));
+          const wallets = await CrowdVaultContract.wallets(address);
+          setVaultBalance(ethers.formatEther(wallets['balance']));
           setLoaded(true);
         }
       } catch (error) {

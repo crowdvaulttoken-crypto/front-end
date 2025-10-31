@@ -21,6 +21,7 @@ export function Home() {
     address,
     bnbBalance,
     usdtBalance,
+    vaultBalance,
     walletData,
     affiliateData,
     CrowdVaultContract,
@@ -289,7 +290,7 @@ export function Home() {
                     <h3>Available Balance</h3>
                 </div>
                 <div className="flex flex-wrap justify-start text-lg">
-                    ${parseFloat(walletData.balance).toFixed(4)} 
+                    ${parseFloat(vaultBalance).toFixed(4)} 
                 </div>                
               </div>
           </div>
