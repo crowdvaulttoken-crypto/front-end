@@ -7,6 +7,7 @@ import clsx from "clsx";
 
 // Local Imports
 import Logo from "assets/appLogo.svg?react";
+
 import { Menu } from "./Menu";
 import { Item } from "./Menu/Item";
 import { useThemeContext } from "app/contexts/theme/context";
