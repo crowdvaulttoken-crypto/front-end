@@ -83,8 +83,6 @@ export function Home() {
 
         const vx = await CrowdVaultContract.vaults(address,0);
         setVx(vx);
-        console.log(`capping: ${parseInt(vx[1])/1e18}`);
-        console.log(`capping: ${vx.cap}`);
         const v0 = await CrowdVaultContract.getVaultData(address,0);
         setVip0(v0);
         setV0CoolDown(v0.coolDown);

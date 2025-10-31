@@ -24,7 +24,7 @@ export function useSmartContract() {
 
   const [lastBlockNumber, setLastBlockNumber] = useState(0);
   const [lastBlockTime, setLastBlockTime] = useState(0);
-  const [loaded, setLoaded] = useState(true);
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     // Check if window.ethereum is available (MetaMask or similar)
@@ -32,12 +32,13 @@ export function useSmartContract() {
       setConnected(false);
       console.warn('Ethereum provider not detected');
       return;
-    }    
+    }
     // Create a new provider
     const newProvider =  new ethers.BrowserProvider(window.ethereum);
     setProvider(newProvider); 
 
     const handleNetworkChange = async () => {
+      
       try {
         const network = await newProvider.getNetwork();
         setNetwork(network.name);
@@ -63,35 +64,37 @@ export function useSmartContract() {
 
         setWNTradesContract(new ethers.Contract(SmartContractAddress, smartContractAbi, signer));        
         setUsdtContract(new ethers.Contract(usdtContractAddress, erc20Abi, signer));
-        if( CrowdVaultContract && USDTContract && loaded  ) {
-          setLoaded(false);
+        if( CrowdVaultContract && USDTContract  ) {
           setWalletData(await CrowdVaultContract.getWalletData(address));
           setVaultBalance(await CrowdVaultContract.getWalletData(address).balance);
-
           setLastBlockTime(await CrowdVaultContract.getLastBlockTime(address));
           setLastBlockNumber(await CrowdVaultContract.getLastBlockNumber(address));
           setWalletData(await CrowdVaultContract.getWalletData(address))
           setAffiliateData(await CrowdVaultContract.getAffiliateData(address))
-
           setUsdtBalance(ethers.formatEther(await USDTContract.balanceOf(address)));
-
-          //console.log(ethers.formatEther(await USDTContract.balanceOf(address)))
+          setLoaded(true);
         }
       } catch (error) {
         console.error(error);
+        setLoaded(true);
       }
+      
     };
 
     // Initial network check
+    if( loaded==false ){
     handleNetworkChange();  
+    }
     
     // Listen for chain changes (network changes)
     window.ethereum.on('chainChanged', handleNetworkChange);
     window.ethereum.on('accountsChanged', handleNetworkChange);
     
+    
     // Cleanup function
     return () => {
       if (window.ethereum) {
+        
         window.ethereum.removeListener('chainChanged', handleNetworkChange);
         window.ethereum.removeListener('accountsChanged', handleNetworkChange); 
       }
