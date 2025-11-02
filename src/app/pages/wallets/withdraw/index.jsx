@@ -138,8 +138,8 @@ export default function Home() {
               <Button
                 color="primary" 
                 onClick={() => {
-                  setWithdrawAmount(100);
-                  setCustomTitle('100 USDT Withdrawal');
+                  setWithdrawAmount(50);
+                  setCustomTitle('50 USDT Withdrawal');
                   setSuccess(false);
                   setError(false);
                   open();
