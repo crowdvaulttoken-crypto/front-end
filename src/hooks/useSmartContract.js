@@ -258,6 +258,7 @@ export function useSmartContract() {
   }
 
   return {
+    ethers,
     network,
     provider,
     signer,

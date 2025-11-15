@@ -18,6 +18,7 @@ import {
 export function Home() {
   const navigate = useNavigate();
   const {
+    ethers,
     address,
     bnbBalance,
     usdtBalance,
@@ -87,55 +88,61 @@ export function Home() {
         const v0 = await CrowdVaultContract.getVaultData(address,0);
         setVip0(v0);
         setV0CoolDown(v0.coolDown);
-        setV0Percent( ((((parseInt(v0.amount)*3) - parseInt(v0.cap) ) / parseInt(v0.amount)*3)*10).toFixed(1) );
+        
+        setV0Percent (((((parseInt(v0.amount)*3)-parseInt(v0.cap))/ (parseInt(v0.amount)*3))*100).toFixed(2)) ;
+        console.log(`formula: (((((${parseInt(v0.amount)}*3)-${parseInt(v0.cap)})/ (${parseInt(v0.amount)}*3))*100))  `)
+        //setV0Percent ((parseInt(v0.amount)*3)-parseInt(v0.cap)) * 100 / (parseInt(v0.amount)*3)
         setV0Collect( (parseInt((now - parseInt(v0.coolDown)) / 86400)) * parseInt(v0.amount) * 0.02 );
 
         const v1 = await CrowdVaultContract.getVaultData(address,1);
         setVip1(v1);
         setV1CoolDown(v1.coolDown);
-        setV1Percent( ((((parseInt(v1.amount)*3) - parseInt(v1.cap) ) / parseInt(v1.amount)*3)*10).toFixed(1) );
+        //= ((10*3)-30) * 100 / (10*3)
+        setV1Percent (((((parseInt(v1.amount)*3)-parseInt(v1.cap)) / (parseInt(v1.amount)*3))*100).toFixed(2));
+        console.log(`formula: (((((${parseInt(v1.amount)}*3)-${parseInt(v1.cap)})/ (${parseInt(v1.amount)}*3))*100)) `)
         setV1Collect( (parseInt((now - parseInt(v1.coolDown)) / 86400)) * parseInt(v1.amount) * 0.02 );
 
         const v2 = await CrowdVaultContract.getVaultData(address,2);
         setVip2(v2);
         setV2CoolDown(v2.coolDown);
-        setV2Percent( ((((parseInt(v2.amount)*3) - parseInt(v2.cap) ) / parseInt(v2.amount)*3)*10).toFixed(1) );
+        setV2Percent (((((parseInt(v2.amount)*3)-parseInt(v2.cap)) / (parseInt(v2.amount)*3))*100).toFixed(2));
+        console.log(`formula: =(((((${parseInt(v2.amount)}*3)-${parseInt(150)})/ (${parseInt(v2.amount)}*3))*100)) `)
         setV2Collect( (parseInt((now - parseInt(v2.coolDown)) / 86400)) * parseInt(v2.amount) * 0.02 );        
 
         const v3 = await CrowdVaultContract.getVaultData(address,3);
         setVip3(v3);
         setV3CoolDown(v3.coolDown);
-        setV3Percent( ((((parseInt(v3.amount)*3) - parseInt(v3.cap) ) / parseInt(v3.amount)*3)*10).toFixed(1) );
+        setV3Percent (((((parseInt(v3.amount)*3)-parseInt(v3.cap)) / (parseInt(v3.amount)*3))*100).toFixed(2));
         setV3Collect( (parseInt((now - parseInt(v3.coolDown)) / 86400)) * parseInt(v3.amount) * 0.02 );
         
         const v4 = await CrowdVaultContract.getVaultData(address,4);
         setVip4(v4);
         setV4CoolDown(v4.coolDown);
-        setV4Percent( ((((parseInt(v4.amount)*3) - parseInt(v4.cap) ) / parseInt(v4.amount)*3)*10).toFixed(1) );
+        setV4Percent( ((((parseInt(v4.amount)*3)-parseInt(v4.cap)) / (parseInt(v4.amount)*3))*100).toFixed(2) );
         setV4Collect( (parseInt((now - parseInt(v4.coolDown)) / 86400)) * parseInt(v4.amount) * 0.02 );
         
         const v5 = await CrowdVaultContract.getVaultData(address,5);
         setVip5(v5);
         setV5CoolDown(v5.coolDown);
-        setV5Percent( ((((parseInt(v5.amount)*3) - parseInt(v5.cap) ) / parseInt(v5.amount)*3)*10).toFixed(1) );
+        setV5Percent( ((((parseInt(v5.amount)*3)-parseInt(v5.cap)) / (parseInt(v5.amount)*3))*100).toFixed(2) );
         setV5Collect( (parseInt((now - parseInt(v5.coolDown)) / 86400)) * parseInt(v5.amount) * 0.02 );
 
         const v6 = await CrowdVaultContract.getVaultData(address,6);
         setVip6(v6);
         setV6CoolDown(v6.coolDown);
-        setV6Percent( ((((parseInt(v6.amount)*3) - parseInt(v6.cap) ) / parseInt(v6.amount)*3)*10).toFixed(1) );
+        setV6Percent( ((((parseInt(v6.amount)*3)-parseInt(v6.cap)) / (parseInt(v6.amount)*3))*100).toFixed(2) );
         setV6Collect( (parseInt((now - parseInt(v6.coolDown)) / 86400)) * parseInt(v6.amount) * 0.02 );
 
         const v7 = await CrowdVaultContract.getVaultData(address,7);
         setVip7(v7);
         setV7CoolDown(v7.coolDown);
-        setV7Percent( ((((parseInt(v7.amount)*3) - parseInt(v7.cap) ) / parseInt(v7.amount)*3)*10).toFixed(1) );
+        setV7Percent( ((((parseInt(v7.amount)*3)-parseInt(v7.cap)) / (parseInt(v7.amount)*3))*100).toFixed(2) );
         setV7Collect( (parseInt((now - parseInt(v7.coolDown)) / 86400)) * parseInt(v7.amount) * 0.02 );
 
         const v8 = await CrowdVaultContract.getVaultData(address,8);
         setVip8(v8);
         setV8CoolDown(v8.coolDown);
-        setV8Percent( ((((parseInt(v8.amount)*3) - parseInt(v8.cap) ) / parseInt(v8.amount)*3)*10).toFixed(1) );
+        setV8Percent( ((((parseInt(v8.amount)*3)-parseInt(v8.cap)) / (parseInt(v8.amount)*3))*100).toFixed(2) );
         setV8Collect( (parseInt((now - parseInt(v8.coolDown)) / 86400)) * parseInt(v8.amount) * 0.02 );
       }
     }
@@ -145,7 +152,7 @@ export function Home() {
     return () => {
       
     }
-  }, [address,CrowdVaultContract,loaded]);
+  }, [address,CrowdVaultContract,loaded,ethers]);
 
   const [isOpen, { open, close }] = useDisclosure(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
