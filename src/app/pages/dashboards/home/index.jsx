@@ -325,7 +325,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip0.amount>0?parseInt(vx[1])/1e18:30}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v0Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v0Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v0CoolDown) )}</div>
                 </div>
@@ -354,7 +354,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip1.amount>0?vip1.cap:150}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v1Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v1Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v1CoolDown) )}</div>
                 </div>
@@ -383,7 +383,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip2.amount>0?vip2.cap:300}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v2Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v2Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v2CoolDown) )}</div>
                 </div>
@@ -412,7 +412,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip3.amount>0?vip3.cap:600}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v3Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v3Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v3CoolDown) )}</div>
                 </div>
@@ -441,7 +441,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip4.amount>0?vip4.cap:1200}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v4Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v4Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v4CoolDown) )}</div>
                 </div>
@@ -470,7 +470,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip5.amount>0?vip5.cap:2400}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v5Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v5Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v5CoolDown) )}</div>
                 </div>
@@ -499,7 +499,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip6.amount>0?vip6.cap:4800}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v6Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v6Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v6CoolDown) )}</div>
                 </div>
@@ -528,7 +528,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip7.amount>0?vip7.cap:9600}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v7Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v7Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v7CoolDown) )}</div>
                 </div>
@@ -557,7 +557,7 @@ export function Home() {
                   <div className="truncate font-medium text-sm">Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip8.amount>0?vip8.cap:19200}</div>
                   <div className="truncate font-medium text-sm">Available</div>
-                  <div className="truncate font-medium text-lg mb-1">${v8Collect}</div>
+                  <div className="truncate font-medium text-lg mb-1">${v8Collect.toFixed(2)}</div>
                   <div className="truncate font-medium text-sm">CoolDown</div>
                   <div className="truncate font-medium text-lg">{formatTime( parseInt(v8CoolDown) )}</div>
                 </div>
