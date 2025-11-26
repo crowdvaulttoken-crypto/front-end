@@ -318,7 +318,7 @@ export function Home() {
           </div>          
         </div>
         <div className="flex flex-wrap justify-start gap-0">
-          <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3">
+          <div className={ (vip0.amount>0 && vip0.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -347,11 +347,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v0CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip0.cap==0 || (vip1.amount>0 && vip1.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#1 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip1.amount>0?vip1.cap:150}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v1Collect.toFixed(2)}</div>
@@ -376,11 +376,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v1CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip1.cap==0 || (vip2.amount>0 && vip2.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#2 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip2.amount>0?vip2.cap:300}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v2Collect.toFixed(2)}</div>
@@ -405,11 +405,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v2CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip2.cap==0 || (vip3.amount>0 && vip3.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#3 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip3.amount>0?vip3.cap:600}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v3Collect.toFixed(2)}</div>
@@ -434,11 +434,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v3CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip3.cap==0 || (vip4.amount>0 && vip4.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#4 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip4.amount>0?vip4.cap:1200}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v4Collect.toFixed(2)}</div>
@@ -463,11 +463,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v4CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip4.cap==0 || (vip5.amount>0 && vip5.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#5 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip5.amount>0?vip5.cap:2400}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v5Collect.toFixed(2)}</div>
@@ -492,11 +492,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v5CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip5.cap==0 || (vip6.amount>0 && vip6.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#6 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip6.amount>0?vip6.cap:4800}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v6Collect.toFixed(2)}</div>
@@ -521,11 +521,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v6CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip6.cap==0 || (vip7.amount>0 && vip7.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#7 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip7.amount>0?vip7.cap:9600}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v7Collect.toFixed(2)}</div>
@@ -550,11 +550,11 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={v7CoolDown>0?"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3": "hidden"}  >
+          <div className={vip7.amount==0 ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#8 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip8.amount>0?vip8.cap:19200}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v8Collect.toFixed(2)}</div>
