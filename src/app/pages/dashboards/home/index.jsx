@@ -318,11 +318,11 @@ export function Home() {
           </div>          
         </div>
         <div className="flex flex-wrap justify-start gap-0">
-          <div className={ (vip0.amount>0 && vip0.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (vip0.amount>0 && vip0.cap>0 ) || parseInt(vip0.amount)==0 ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
-                  <div className="truncate font-medium text-sm">Capping</div>
+                  <div className="truncate font-medium text-sm">#0 Capping</div>
                   <div className="truncate font-medium text-lg mb-1">${vip0.amount>0?parseInt(vx[1])/1e18:30}</div>
                   <div className="truncate font-medium text-sm">Available</div>
                   <div className="truncate font-medium text-lg mb-1">${v0Collect.toFixed(2)}</div>
@@ -347,7 +347,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip0.cap==0 || (vip1.amount>0 && vip1.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip1.amount)>0 && parseFloat(vip1.cap)>0 ) || (parseInt(vip1.amount)==0 && parseInt(vip0.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -376,7 +376,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip1.cap==0 || (vip2.amount>0 && vip2.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip2.amount)>0 && parseFloat(vip2.cap)>0 ) || (parseInt(vip2.amount)==0 && parseInt(vip1.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -405,7 +405,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip2.cap==0 || (vip3.amount>0 && vip3.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip3.amount)>0 && parseFloat(vip3.cap)>0 ) || (parseInt(vip3.amount)==0 && parseInt(vip3.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -434,7 +434,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip3.cap==0 || (vip4.amount>0 && vip4.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip4.amount)>0 && parseFloat(vip4.cap)>0 ) || (parseInt(vip4.amount)==0 && parseInt(vip2.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -463,7 +463,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip4.cap==0 || (vip5.amount>0 && vip5.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip5.amount)>0 && parseFloat(vip5.cap)>0 ) || (parseInt(vip5.amount)==0 && parseInt(vip4.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -492,7 +492,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip5.cap==0 || (vip6.amount>0 && vip6.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip6.amount)>0 && parseFloat(vip6.cap)>0 ) || (parseInt(vip6.amount)==0 && parseInt(vip5.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -521,7 +521,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip6.cap==0 || (vip7.amount>0 && vip7.cap==0) ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ (parseInt(vip7.amount)>0 && parseFloat(vip7.cap)>0 ) || (parseInt(vip7.amount)==0 && parseInt(vip6.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -550,7 +550,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={vip7.amount==0 ? "hidden":"px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3"} >
+          <div className={ ( parseInt(vip7.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
