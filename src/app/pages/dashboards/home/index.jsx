@@ -405,7 +405,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={ (parseInt(vip3.amount)>0 && parseFloat(vip3.cap)>0 ) || (parseInt(vip3.amount)==0 && parseInt(vip3.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
+          <div className={ (parseInt(vip3.amount)>0 && parseFloat(vip3.cap)>0 ) || (parseInt(vip3.amount)==0 && parseInt(vip2.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -434,7 +434,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={ (parseInt(vip4.amount)>0 && parseFloat(vip4.cap)>0 ) || (parseInt(vip4.amount)==0 && parseInt(vip2.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
+          <div className={ (parseInt(vip4.amount)>0 && parseFloat(vip4.cap)>0 ) || (parseInt(vip4.amount)==0 && parseInt(vip3.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
@@ -550,7 +550,7 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div className={ ( parseInt(vip7.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
+          <div className={ (parseInt(vip7.amount)>0) ? "px-4 pb-4 pt-5 text-center w-full md:w-1/2 lg:w-1/3":"hidden"} >
             <div className="rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 px-4 pb-4 pt-5 text-center ">
               <div className="mx-8 flex gap-2 justify-between">
                 <div className="text-md uppercase text-white text-start">
