@@ -1,20 +1,24 @@
 import { Page } from "components/shared/Page";
 import { useNavigate } from "react-router";
 import { useSmartContract } from "../../../../hooks/useSmartContract";
-import { useEffect, useState } from "react";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState,Fragment } from "react";
+import { ExclamationTriangleIcon,XMarkIcon } from "@heroicons/react/24/outline";
+import {ExclamationCircleIcon,} from "@heroicons/react/24/solid";
 // Local Imports
 import { ConfirmModal } from "components/shared/ConfirmModal";
 import { useDisclosure } from "hooks";
 import { Button } from "components/ui";
 import { ImMug,ImCart } from "react-icons/im";
 
+import { Transition } from "@headlessui/react";
 
 export default function Home() {
+  const [isOpen1, handler1] = useDisclosure(true);
   const navigate = useNavigate();
   const {
     walletData,
-    withdraw
+    withdraw,
+    CrowdVaultContract
   } =  useSmartContract();  
 
   const [withdrawAmount,setWithdrawAmount] = useState(0);
@@ -92,9 +96,62 @@ export default function Home() {
     return `${days}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const [stats, setStats] = useState({"totalUsers":0,"totalAgents":0,"contractBalance":0,"_totalDeposits":0,"_totalRewardsDistributed":0,"_totalWithdrawals":0});
+  useEffect(() => {
+    const readContract = async () => {
+        const statss = await CrowdVaultContract.getContractStats();
+        setStats(statss);
+    }
+    if ( CrowdVaultContract && stats.totalUsers==0 ){
+      readContract();
+    }
+    return () => {
+      
+    }
+  }, [CrowdVaultContract,stats] );      
+
   return (
     <Page title="Withdraw">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
+
+        { stats[2]!=null && stats[2]<20 ? 
+        <Transition
+          as={Fragment}
+          show={isOpen1}
+          leave="duration-200 transition ease-in-out"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          
+        >
+          <div
+            role="alert"
+            className="this:info flex items-center space-x-2 rounded-lg border border-this-darker p-4 text-this-darker dark:border-this-lighter dark:text-this-lighter "
+          >
+            <ExclamationCircleIcon className="size-9" />
+            <span className="flex-1">
+              <strong>Announcement:</strong> Insufficient Funds for Payout
+
+              At this time, the available funds are no longer sufficient to support ongoing payouts.
+              This situation has occurred because the overall community participation and support for the project have not reached the level required to sustain the system.
+
+              We appreciate everyone who contributed and supported the project.
+              Moving forward, stronger and more consistent community engagement is essential for long-term stability and growth.
+            </span>
+            <div className="contents">
+              <Button
+                onClick={handler1.close}
+                color="info"
+                variant="flat"
+                className="-mr-1 size-6 shrink-0 rounded-full p-0"
+              >
+                <XMarkIcon className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </Transition>
+        :<></>
+        }
+
         <div className="py-5 text-center lg:py-6">
           <p className="text-md uppercase">Available Balance</p>
           <h3 className="mt-1 text-xl font-semibold text-gray-600 dark:text-dark-100">${parseInt(walletData.balance)}</h3>
