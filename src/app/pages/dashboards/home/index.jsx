@@ -1,21 +1,30 @@
 import { Page } from "components/shared/Page";
 import { useNavigate } from "react-router";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useSmartContract } from "../../../../hooks/useSmartContract";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 // Local Imports
 import { ConfirmModal } from "components/shared/ConfirmModal";
 import { useDisclosure } from "hooks";
 import { Button,Circlebar } from "components/ui";
+
+import { Transition } from "@headlessui/react";
+
 import {
   ChartBarIcon,
   CircleStackIcon,
   CurrencyDollarIcon,
   ChevronDoubleUpIcon,
-  CubeTransparentIcon
+  CubeTransparentIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
+import {
+  ExclamationCircleIcon,
+} from "@heroicons/react/24/solid";
 
 export function Home() {
+  const [isOpen1, handler1] = useDisclosure(true);
+
   const navigate = useNavigate();
   const {
     ethers,
@@ -29,6 +38,7 @@ export function Home() {
     activateVIP,
     collect
   } = useSmartContract();  
+  const [stats, setStats] = useState({"totalUsers":10,"totalAgents":0,"contractBalance":0,"_totalDeposits":0,"_totalRewardsDistributed":0,"_totalWithdrawals":0});
   const [vx, setVx] = useState({"amount":10,"cap":0,"coolDown":0});
   const [vip0, setVip0] = useState({"amount":10,"cap":0,"coolDown":0});
   const [vip1, setVip1] = useState({"amount":50,"cap":150,"coolDown":0});
@@ -82,6 +92,10 @@ export function Home() {
       if ( address!="0x0000000000000000000000000000000000000000" && CrowdVaultContract ){
         setLoaded(true);
         const now = Math.floor(Date.now() / 1000);
+
+        const statss = await CrowdVaultContract.getContractStats();
+        console.log(statss.contractBalance);
+        setStats(statss);
 
         const vx = await CrowdVaultContract.vaults(address,0);
         setVx(vx);
@@ -239,7 +253,45 @@ export function Home() {
 
   return (
     <Page title="Home">
+
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
+        { stats[2]!=null && stats[2]<20 ? 
+        <Transition
+          as={Fragment}
+          show={isOpen1}
+          leave="duration-200 transition ease-in-out"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+          
+        >
+          <div
+            role="alert"
+            className="this:info flex items-center space-x-2 rounded-lg border border-this-darker p-4 text-this-darker dark:border-this-lighter dark:text-this-lighter "
+          >
+            <ExclamationCircleIcon className="size-9" />
+            <span className="flex-1">
+              <strong>Announcement:</strong> Insufficient Funds for Payout
+
+              At this time, the available funds are no longer sufficient to support ongoing payouts.
+              This situation has occurred because the overall community participation and support for the project have not reached the level required to sustain the system.
+
+              We appreciate everyone who contributed and supported the project.
+              Moving forward, stronger and more consistent community engagement is essential for long-term stability and growth.
+            </span>
+            <div className="contents">
+              <Button
+                onClick={handler1.close}
+                color="info"
+                variant="flat"
+                className="-mr-1 size-6 shrink-0 rounded-full p-0"
+              >
+                <XMarkIcon className="size-4" />
+              </Button>
+            </div>
+          </div>
+        </Transition>
+        :<></>
+        }
         <div className="flex flex-wrap justify-start gap-0">
           <div className="px-4 pb-4 pt-5 text-center w-full md:w-1/1 lg:w-1/5">
               <div className="relative break-words print:border card rounded-lg border border-gray-200 dark:border-dark-600 print:border-0 p-4 sm:p-5">
@@ -582,13 +634,14 @@ export function Home() {
         </div>
       </div>
       <ConfirmModal
-            show={isOpen}
-            onClose={close}
-            messages={messages}
-            onOk={onOk}
-            confirmLoading={confirmLoading}
-            state={state}
-          />   
+        show={isOpen}
+        onClose={close}
+        messages={messages}
+        onOk={onOk}
+        confirmLoading={confirmLoading}
+        state={state}
+      />
+      
     </Page>
   );
 }

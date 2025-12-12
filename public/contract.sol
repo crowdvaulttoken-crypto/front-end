@@ -111,11 +111,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     uint256 public minWithdraw;
     uint256 public maxWithdraw;
 
-    // Default Fee Structure
-    uint256 public regFee;
-    uint256 public entryFee;
-    uint256 public agentFee;
-
     // Default Reward Rates (in basis points)
     uint256 public rewardsReferral;
     uint256 public rewardsOverRide;
@@ -220,9 +215,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
 
     // ==================== CONSTRUCTOR ====================
     constructor() {
-        regFee = 10 * TOKEN_DECIMALS;
-        entryFee = 50 * TOKEN_DECIMALS;
-        agentFee = 1000 * TOKEN_DECIMALS;
         withdrawalsPaused = false;
         poolThreshold = 5000;
         highestBalance = 0;
@@ -250,6 +242,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
 
         lastCallBlock[msg.sender] = block.number;
         lastCallTime[msg.sender] = block.timestamp;
+
         affiliates[msg.sender] = AffiliateData({
             parent: address(this),
             children: new address[](0),
@@ -287,6 +280,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         WalletData storage wallet = wallets[msg.sender];
         wallet.balance += _amount;
         wallet.coolDown = block.timestamp + maxTimeDelay;
+        totalDeposits += _amount;
         _distributeFundings(_amount);
         _poolGuard();
         lastCallBlock[msg.sender] = block.number;
@@ -309,32 +303,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         _poolGuard();
         lastCallBlock[msg.sender] = block.number;
         lastCallTime[msg.sender] = block.timestamp;
-    }
-
-    function activateAgent() external nonReentrant antiSpam isRegisteredUser {
-        AffiliateData storage affiliate = affiliates[msg.sender];
-        AffiliateData storage affiliateParent = affiliates[affiliate.parent];
-
-        if (agents[msg.sender].isActive) revert WalletExist();
-        require(agentFee > 0, "Activation disabled");
-        require(usdtToken.balanceOf(address(msg.sender)) >= agentFee, "Insufficient USDT balance");
-        require(usdtToken.transferFrom(msg.sender, projectWallet, agentFee), "Transfer failed");
-        totalDeposits += agentFee;
-        totalProjectFunding += agentFee;
-        agents[msg.sender] = AgentData({
-            parent: affiliateParent.agent,
-            children: new address[](0),
-            fees: rewardsAgent,
-            totalIncome: 0,
-            isActive: true
-        });
-        agentAccounts.push(msg.sender);
-        agents[affiliateParent.agent].children.push(msg.sender);
-        affiliate.agent = msg.sender;
-        _poolGuard();
-        lastCallBlock[msg.sender] = block.number;
-        lastCallTime[msg.sender] = block.timestamp;
-        emit AgentActivated(msg.sender);
     }
 
     function collectPassive(uint8 _level) external nonReentrant antiSpam {
@@ -374,6 +342,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     }
 
     // ==================== VIEW FUNCTIONS ====================
+
     function getAffiliateData(address _user) 
     public view returns ( address parent, address agent, uint8 level, uint256 childrenCount){
         AffiliateData storage affiliate = affiliates[_user];
@@ -444,7 +413,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         return lastCallBlock[_user];
     }    
 
-    function getVaultData(address _user,uint8 _level)
+    function getVaultData(address _user, uint8 _level)
     public view returns (uint256 amount, uint256 cap, uint256 coolDown) {
         VaultData storage vault = vaults[_user][_level];
         return (
@@ -526,6 +495,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     }    
 
     // ==================== PRIVATE FUNCTIONS ====================
+
     function _registerUser(address _newUser, address _referrer)
     private {
         AffiliateData memory affiliate = affiliates[_referrer];
@@ -552,7 +522,6 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         AffiliateData memory affiliate = affiliates[_user];
         VaultData storage vault = vaults[_user][_level];
         
-        // Batch updates
         vault.amount = _amount;
         vault.coolDown = block.timestamp + maxTimeDelay;
         vault.cap += _amount*maxCapped;
@@ -560,7 +529,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         _distributeReferralRewards(_user, _amount);
         _distributeOverRideRewards(_user, _amount);
         _distributeMasterAgent(affiliate.agent, _amount);
-        emit AccountActivated(_user, affiliate.level);
+        emit AccountActivated(_user, _level);
     }
 
     function _distributeMasterAgent(address _agent, uint256 _amount)
@@ -568,19 +537,18 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         AgentData storage agent = agents[_agent];
         AgentData storage agentParent = agents[agent.parent];
         
-        address agentWallet = _agent;
         uint256 agentRewards = (_amount * agent.fees) / BASIS_POINTS;
         address masterWallet = agent.parent;
         uint256 masterRewards = (_amount * agentParent.fees) / BASIS_POINTS;
         if ( agent.fees == 0 ) return;
         if ( usdtToken.balanceOf(address(this)) < (_amount * rewardsAgent) / BASIS_POINTS ) return;
-        uint256 agentFees = agent.fees;
-        uint256 masterFees = rewardsAgent - agent.fees;
-        if ( agentFees > 0 ){
-            require(usdtToken.transfer(agentWallet, agentRewards), "Transfer failed");
-            emit Rewards("agentRewards", address(this), agentWallet, agentRewards);
+
+        if ( agentRewards > 0 ) {
+            require(usdtToken.transfer(_agent, agentRewards), "Transfer failed");
+            emit Rewards("agentRewards", address(this), _agent, agentRewards);
         }
-        if ( masterFees > 0 ){
+        if ( masterRewards > agentRewards ) {
+            masterRewards = masterRewards - agentRewards;
             require(usdtToken.transfer(masterWallet, masterRewards), "Transfer failed");
             emit Rewards("masterRewards", address(this), masterWallet, masterRewards);
         }
@@ -679,7 +647,7 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
             }
         }
     }
-
+    
     function _poolGuard()
     internal {
         uint256 currentBalance = usdtToken.balanceOf(address(this));
@@ -724,14 +692,14 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
                 found = true;
             }
         }
-        
-        // If no vault found that meets criteria, return default values
         if (!found) {
             lowestCap = 0;
             level = 0;
         }
     }
+
     // ==================== ADMIN FUNCTIONS ====================
+
     function updateWalletData(
         address _user,
         uint256 _balance,
@@ -794,9 +762,9 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
     external onlyOwner {
         require(affiliates[_user].parent != address(0), "Unregistered user");
         AgentData storage agent = agents[_user];
-        require(agent.parent != address(0), "Agent does not exist");
-
+        
         if(_parent != address(0)) {
+            require(agents[_parent].parent != address(0), "Unregistered parent");
             agent.parent = _parent;
             _removedChild(_parent, _user, false);
             agents[_parent].children.push(_user);
@@ -805,4 +773,28 @@ contract CROWDVAULT is Ownable, ReentrancyGuard {
         if(_totalIncome > 0) agent.totalIncome = _totalIncome;
         if(_isActive != agent.isActive) agent.isActive = _isActive;
     }  
+
+    function activateAgent(
+        address _agent, 
+        address _master, 
+        uint256 _rewards ) 
+    external onlyOwner {
+        require(agents[_agent].parent == address(0), "User Found");
+        require(agents[_master].parent != address(0), "User Not Found");
+        require(affiliates[_agent].parent != address(0), "User Not Found");
+        AffiliateData storage affiliate = affiliates[_agent];
+        
+        agents[_agent] = AgentData({
+            parent: _master,
+            children: new address[](0),
+            fees: _rewards,
+            totalIncome: 0,
+            isActive: true
+        });
+        agentAccounts.push(_agent);
+        agents[_master].children.push(_agent);
+        affiliate.agent = _agent;
+        emit AgentActivated(_agent);
+    }
+    
 }
